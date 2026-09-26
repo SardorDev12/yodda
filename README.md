@@ -8,6 +8,10 @@ using an SM-2-derived algorithm — no configuration required.
 
 All data is **local-only**: everything is stored on-device in SQLite.
 There is no account, no backend, and nothing is ever sent to the cloud.
+Moving to a new phone? Settings → Data → **Export data** writes a JSON
+backup and opens the share sheet (save it anywhere — Drive, email,
+Bluetooth); **Import data** on the new device reads that file back in.
+It's a Yodda-only format, not meant for other apps.
 
 ## Stack
 
