@@ -15,6 +15,7 @@
     "android": {
       "package": "app.yodda.mobile",
       "icon": "./assets/icon.png",
+      "backgroundColor": "#FAFAFC",
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -25,6 +26,7 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
+      "expo-system-ui",
       [
         "expo-splash-screen",
         {

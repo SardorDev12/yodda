@@ -6,15 +6,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { OverflowMenu } from '@/components/OverflowMenu';
 import { DATABASE_NAME, migrateDatabase } from '@/db/schema';
-import { syncNavigationBar } from '@/lib/navigation-bar';
+import { syncAndroidChrome } from '@/lib/navigation-bar';
 import { SettingsProvider, useSettings } from '@/store/settings-context';
 
 function Navigator() {
   const { colors, scheme, t } = useSettings();
 
   useEffect(() => {
-    syncNavigationBar(scheme);
-  }, [scheme]);
+    syncAndroidChrome(scheme, colors);
+  }, [scheme, colors]);
 
   return (
     <>
