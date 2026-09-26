@@ -4,15 +4,12 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { createCard, createSubject, listSubjects } from '@/db/queries';
-import { pushCard, pushNewSubject } from '@/lib/sync';
-import { useAuth } from '@/store/auth-context';
 import { colors, radius, spacing } from '@/theme';
 import type { SubjectWithCounts } from '@/types';
 
 export default function AddScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
-  const { user } = useAuth();
 
   const [subjects, setSubjects] = useState<SubjectWithCounts[]>([]);
   const [subjectId, setSubjectId] = useState<string | null>(null);
@@ -33,7 +30,6 @@ export default function AddScreen() {
     const name = newSubjectName.trim();
     if (!name) return;
     const subject = await createSubject(db, name);
-    if (user) pushNewSubject(subject, user.id).catch(() => {});
     setSubjects((prev) => [...prev, { ...subject, totalCards: 0, dueToday: 0, newCards: 0 }]);
     setSubjectId(subject.id);
     setNewSubjectName('');
@@ -44,8 +40,7 @@ export default function AddScreen() {
     if (!subjectId || !question.trim() || !answer.trim()) return;
     setSaving(true);
     try {
-      const card = await createCard(db, { subjectId, question, answer });
-      if (user) pushCard(card, user.id).catch(() => {});
+      await createCard(db, { subjectId, question, answer });
       setQuestion('');
       setAnswer('');
       router.back();

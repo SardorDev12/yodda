@@ -5,7 +5,6 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getHomeStats, type HomeStats } from '@/db/queries';
-import { useAuth } from '@/store/auth-context';
 import { colors, radius, spacing } from '@/theme';
 
 function greeting(): string {
@@ -18,7 +17,6 @@ function greeting(): string {
 export default function HomeScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
-  const { user } = useAuth();
   const [stats, setStats] = useState<HomeStats | null>(null);
 
   useFocusEffect(
@@ -33,14 +31,11 @@ export default function HomeScreen() {
     }, [db])
   );
 
-  const name = user?.email?.split('@')[0] ?? 'there';
   const dueToday = stats?.dueToday ?? 0;
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.greeting}>
-        {greeting()}, {name}
-      </Text>
+      <Text style={styles.greeting}>{greeting()}</Text>
 
       <View style={styles.heroCard}>
         <Text style={styles.heroLabel}>TODAY</Text>

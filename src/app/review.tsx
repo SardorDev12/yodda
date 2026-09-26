@@ -6,8 +6,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getDueCards, recordReview } from '@/db/queries';
-import { pushCard } from '@/lib/sync';
-import { useAuth } from '@/store/auth-context';
 import { colors, radius, spacing } from '@/theme';
 import type { Card, Rating } from '@/types';
 
@@ -21,7 +19,6 @@ const RATINGS: { key: Rating; label: string; color: string }[] = [
 export default function ReviewScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
-  const { user } = useAuth();
   const [queue, setQueue] = useState<Card[] | null>(null);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -35,8 +32,7 @@ export default function ReviewScreen() {
 
   async function handleRate(rating: Rating) {
     if (!current) return;
-    const updated = await recordReview(db, current, rating);
-    if (user) pushCard(updated, user.id).catch(() => {});
+    await recordReview(db, current, rating);
     setReviewedCount((n) => n + 1);
     setRevealed(false);
     setIndex((i) => i + 1);
