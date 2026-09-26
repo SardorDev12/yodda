@@ -51,6 +51,9 @@ npx eas-cli@latest build --platform ios
 npx eas-cli@latest build --platform android
 ```
 
+See [Publishing](#publishing) below for the full path from here to the
+App Store / Play Store.
+
 ### Web caveat
 
 `expo-sqlite`'s web backend uses WebAssembly (wa-sqlite) and needs
@@ -68,6 +71,62 @@ The current implementation (`src/scheduler/sm2.ts`) is an Anki-style
 four-button variant of SM-2: **Again / Hard / Good / Easy**. Swapping in a
 different algorithm (e.g. FSRS) means implementing the `Scheduler`
 interface and changing one export — no other code changes.
+
+## Publishing
+
+`eas.json` (build profiles: `development`, `preview`, `production`) is
+already in the repo. Everything past this point needs your own Apple/Google
+accounts and an interactive login, so it's manual:
+
+1. **Create accounts** (one-time, real money):
+   - [Apple Developer Program](https://developer.apple.com/programs/) — $99/year
+   - [Google Play Console](https://play.google.com/console) — $25 one-time
+
+2. **Create a free Expo account** at [expo.dev](https://expo.dev), then log in:
+   ```bash
+   npx eas-cli@latest login
+   ```
+
+3. **Link this project to your Expo account** (writes an `extra.eas.projectId`
+   into `app.json` — don't hand-edit that field):
+   ```bash
+   npx eas-cli@latest build:configure
+   ```
+
+4. **First production builds:**
+   ```bash
+   npx eas-cli@latest build --platform ios --profile production
+   npx eas-cli@latest build --platform android --profile production
+   ```
+   iOS will prompt to generate/upload signing credentials — let EAS manage
+   them unless you already have certificates. This produces a `.ipa` and an
+   `.aab` you can download from the EAS dashboard.
+
+5. **Submit:**
+   ```bash
+   npx eas-cli@latest submit --platform ios
+   npx eas-cli@latest submit --platform android
+   ```
+   iOS submission needs an App Store Connect API key (or Apple ID + app-specific
+   password) when prompted. Android submission needs a Play Console service
+   account JSON key the first time — `eas submit` walks you through generating one.
+   Both can also just be uploaded manually through App Store Connect / Play
+   Console instead of `eas submit`, if you'd rather not create those service
+   credentials.
+
+6. **Store listing, for both stores:**
+   - Screenshots (a few required device sizes each — `assets/appicon.png` and
+     screenshots from `expo start --web` or a simulator work for this)
+   - Short + long description
+   - **Privacy policy URL** — required even though Yodda stores nothing
+     remotely; a one-line hosted page ("Yodda does not collect or transmit
+     any data; everything stays on your device.") satisfies this
+   - Play Store also requires a content rating questionnaire and a Data
+     Safety form — answer "no data collected" throughout, since that's true
+
+7. **Review**: Apple review is typically 1–3 days; Google's is usually
+   faster. Once approved, both stores handle distribution — no further
+   infrastructure needed since the app has no backend.
 
 ## What's intentionally not built yet
 
