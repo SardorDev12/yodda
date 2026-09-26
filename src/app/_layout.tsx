@@ -20,6 +20,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="review" options={{ presentation: 'fullScreenModal', headerShown: false }} />
           <Stack.Screen name="add" options={{ presentation: 'modal', title: 'Add knowledge' }} />
+          <Stack.Screen name="about" options={{ presentation: 'modal', title: 'About Yodda' }} />
           <Stack.Screen name="subject/[id]" options={{ title: 'Subject' }} />
         </Stack>
       </SQLiteProvider>

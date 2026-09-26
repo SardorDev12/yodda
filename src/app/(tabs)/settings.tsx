@@ -1,10 +1,12 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { cancelDailyReminder, isWeb, scheduleDailyReminder } from '@/lib/notifications';
 import { colors, radius, spacing } from '@/theme';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [remindersOn, setRemindersOn] = useState(false);
 
   async function toggleReminders(value: boolean) {
@@ -38,10 +40,13 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
-      <View style={styles.section}>
+      <Pressable style={styles.section} onPress={() => router.push('/about')}>
         <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.hint}>Yodda · Learn once. Remember longer.</Text>
-      </View>
+        <View style={styles.rowBetween}>
+          <Text style={styles.rowLabel}>Yodda · Learn once. Remember longer.</Text>
+          <Text style={styles.link}>How it works →</Text>
+        </View>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -62,4 +67,5 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowLabel: { fontSize: 15, color: colors.text },
   hint: { fontSize: 13, color: colors.muted, lineHeight: 18 },
+  link: { fontSize: 13, color: colors.primary, fontWeight: '600' },
 });
