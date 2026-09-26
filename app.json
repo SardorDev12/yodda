@@ -14,12 +14,7 @@
     },
     "android": {
       "package": "app.yodda.mobile",
-      "adaptiveIcon": {
-        "backgroundColor": "#3760FA",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
+      "icon": "./assets/icon.png",
       "predictiveBackGestureEnabled": false
     },
     "web": {
