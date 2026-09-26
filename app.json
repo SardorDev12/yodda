@@ -15,7 +15,7 @@
     "android": {
       "package": "app.yodda.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#3760FA",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -31,10 +31,19 @@
       "expo-router",
       "expo-sqlite",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#3760FA"
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#5B4BE0"
+          "color": "#3760FA"
         }
       ]
     ],
