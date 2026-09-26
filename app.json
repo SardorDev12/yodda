@@ -40,6 +40,13 @@
           "icon": "./assets/icon.png",
           "color": "#3760FA"
         }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "style": "light"
+        }
       ]
     ],
     "experiments": {

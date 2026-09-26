@@ -1,0 +1,81 @@
+import { useSQLiteContext } from 'expo-sqlite';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+
+import { getSetting, setSetting } from '@/db/queries';
+import { DEFAULT_LANGUAGE, translate, type Language, type TranslationKey } from '@/i18n';
+import { darkColors, lightColors, type Scheme, type ThemeColors } from '@/theme';
+
+const LANGUAGE_KEY = 'language';
+const SCHEME_KEY = 'theme';
+const DEFAULT_SCHEME: Scheme = 'light';
+
+interface SettingsContextValue {
+  language: Language;
+  scheme: Scheme;
+  colors: ThemeColors;
+  loaded: boolean;
+  setLanguage: (language: Language) => void;
+  setScheme: (scheme: Scheme) => void;
+  t: (key: TranslationKey | string, params?: Record<string, string | number>) => string;
+}
+
+const SettingsContext = createContext<SettingsContextValue | null>(null);
+
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const db = useSQLiteContext();
+  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+  const [scheme, setSchemeState] = useState<Scheme>(DEFAULT_SCHEME);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getSetting(db, LANGUAGE_KEY), getSetting(db, SCHEME_KEY)]).then(([lang, sch]) => {
+      if (!active) return;
+      if (lang === 'uz' || lang === 'ru' || lang === 'en') setLanguageState(lang);
+      if (sch === 'light' || sch === 'dark') setSchemeState(sch);
+      setLoaded(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [db]);
+
+  const setLanguage = useCallback(
+    (next: Language) => {
+      setLanguageState(next);
+      setSetting(db, LANGUAGE_KEY, next).catch(() => {});
+    },
+    [db]
+  );
+
+  const setScheme = useCallback(
+    (next: Scheme) => {
+      setSchemeState(next);
+      setSetting(db, SCHEME_KEY, next).catch(() => {});
+    },
+    [db]
+  );
+
+  const t = useCallback(
+    (key: TranslationKey | string, params?: Record<string, string | number>) => translate(language, key, params),
+    [language]
+  );
+
+  const value: SettingsContextValue = {
+    language,
+    scheme,
+    colors: scheme === 'dark' ? darkColors : lightColors,
+    loaded,
+    setLanguage,
+    setScheme,
+    t,
+  };
+
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
+}
+
+export function useSettings(): SettingsContextValue {
+  const ctx = useContext(SettingsContext);
+  if (!ctx) throw new Error('useSettings must be used within SettingsProvider');
+  return ctx;
+}

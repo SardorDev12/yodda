@@ -1,24 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { OverflowMenu } from '@/components/OverflowMenu';
 import { getDueCards, recordReview } from '@/db/queries';
-import { colors, radius, spacing } from '@/theme';
+import { useSettings } from '@/store/settings-context';
+import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, Rating } from '@/types';
-
-const RATINGS: { key: Rating; label: string; color: string }[] = [
-  { key: 'again', label: 'Again', color: colors.danger },
-  { key: 'hard', label: 'Hard', color: colors.warning },
-  { key: 'good', label: 'Good', color: colors.primary },
-  { key: 'easy', label: 'Easy', color: colors.success },
-];
 
 export default function ReviewScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const { colors, t } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const RATINGS: { key: Rating; label: string; color: string }[] = useMemo(
+    () => [
+      { key: 'again', label: t('review.again'), color: colors.danger },
+      { key: 'hard', label: t('review.hard'), color: colors.warning },
+      { key: 'good', label: t('review.good'), color: colors.primary },
+      { key: 'easy', label: t('review.easy'), color: colors.success },
+    ],
+    [colors, t]
+  );
   const [queue, setQueue] = useState<Card[] | null>(null);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -41,7 +47,7 @@ export default function ReviewScreen() {
   if (queue === null) {
     return (
       <SafeAreaView style={styles.root}>
-        <Text style={styles.muted}>Loading…</Text>
+        <Text style={styles.muted}>{t('review.loading')}</Text>
       </SafeAreaView>
     );
   }
@@ -49,14 +55,18 @@ export default function ReviewScreen() {
   if (!current) {
     return (
       <SafeAreaView style={styles.root}>
+        <View style={styles.header}>
+          <View />
+          <OverflowMenu />
+        </View>
         <View style={styles.center}>
           <Ionicons name="checkmark-circle" size={64} color={colors.success} />
-          <Text style={styles.doneTitle}>All done</Text>
+          <Text style={styles.doneTitle}>{t('review.allDone')}</Text>
           <Text style={styles.muted}>
-            {reviewedCount > 0 ? `You reviewed ${reviewedCount} item${reviewedCount === 1 ? '' : 's'}.` : 'Nothing was due right now.'}
+            {reviewedCount > 0 ? t('review.reviewedCount', { count: reviewedCount }) : t('review.nothingDue')}
           </Text>
           <Pressable style={styles.closeButton} onPress={() => router.back()}>
-            <Text style={styles.closeButtonText}>Back to Home</Text>
+            <Text style={styles.closeButtonText}>{t('review.backHome')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -72,6 +82,7 @@ export default function ReviewScreen() {
         <Text style={styles.progress}>
           {index + 1} / {queue.length}
         </Text>
+        <OverflowMenu />
       </View>
 
       <View style={styles.cardArea}>
@@ -87,7 +98,7 @@ export default function ReviewScreen() {
 
       {!revealed ? (
         <Pressable style={styles.showButton} onPress={() => setRevealed(true)}>
-          <Text style={styles.showButtonText}>Show answer</Text>
+          <Text style={styles.showButtonText}>{t('review.showAnswer')}</Text>
         </Pressable>
       ) : (
         <View style={styles.ratingRow}>
@@ -102,47 +113,49 @@ export default function ReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing(1), padding: spacing(3) },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing(2.5),
-    paddingTop: spacing(2),
-  },
-  progress: { color: colors.muted, fontWeight: '600' },
-  cardArea: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing(3) },
-  question: { fontSize: 26, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  answerBox: { marginTop: spacing(3), alignItems: 'center' },
-  divider: { width: 48, height: 2, backgroundColor: colors.border, marginBottom: spacing(3) },
-  answer: { fontSize: 18, color: colors.text, textAlign: 'center', lineHeight: 26 },
-  showButton: {
-    margin: spacing(3),
-    backgroundColor: colors.primarySoft,
-    paddingVertical: spacing(2),
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  showButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
-  ratingRow: { flexDirection: 'row', gap: spacing(1), margin: spacing(2), marginBottom: spacing(4) },
-  ratingButton: {
-    flex: 1,
-    paddingVertical: spacing(2),
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    alignItems: 'center',
-  },
-  ratingText: { fontWeight: '700' },
-  muted: { color: colors.muted, textAlign: 'center' },
-  doneTitle: { fontSize: 22, fontWeight: '700', color: colors.text },
-  closeButton: {
-    marginTop: spacing(2),
-    backgroundColor: colors.primary,
-    paddingVertical: spacing(1.5),
-    paddingHorizontal: spacing(4),
-    borderRadius: radius.md,
-  },
-  closeButtonText: { color: '#fff', fontWeight: '700' },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing(1), padding: spacing(3) },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing(2.5),
+      paddingTop: spacing(2),
+    },
+    progress: { color: colors.muted, fontWeight: '600' },
+    cardArea: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing(3) },
+    question: { fontSize: 26, fontWeight: '700', color: colors.text, textAlign: 'center' },
+    answerBox: { marginTop: spacing(3), alignItems: 'center' },
+    divider: { width: 48, height: 2, backgroundColor: colors.border, marginBottom: spacing(3) },
+    answer: { fontSize: 18, color: colors.text, textAlign: 'center', lineHeight: 26 },
+    showButton: {
+      margin: spacing(3),
+      backgroundColor: colors.primarySoft,
+      paddingVertical: spacing(2),
+      borderRadius: radius.md,
+      alignItems: 'center',
+    },
+    showButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+    ratingRow: { flexDirection: 'row', gap: spacing(1), margin: spacing(2), marginBottom: spacing(4) },
+    ratingButton: {
+      flex: 1,
+      paddingVertical: spacing(2),
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      alignItems: 'center',
+    },
+    ratingText: { fontWeight: '700' },
+    muted: { color: colors.muted, textAlign: 'center' },
+    doneTitle: { fontSize: 22, fontWeight: '700', color: colors.text },
+    closeButton: {
+      marginTop: spacing(2),
+      backgroundColor: colors.primary,
+      paddingVertical: spacing(1.5),
+      paddingHorizontal: spacing(4),
+      borderRadius: radius.md,
+    },
+    closeButtonText: { color: '#fff', fontWeight: '700' },
+  });
+}

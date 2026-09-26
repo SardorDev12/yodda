@@ -1,15 +1,20 @@
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createCard, createSubject, listSubjects } from '@/db/queries';
-import { colors, radius, spacing } from '@/theme';
+import { useSettings } from '@/store/settings-context';
+import { radius, spacing, type ThemeColors } from '@/theme';
 import type { SubjectWithCounts } from '@/types';
 
 export default function AddScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colors, t } = useSettings();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [subjects, setSubjects] = useState<SubjectWithCounts[]>([]);
   const [subjectId, setSubjectId] = useState<string | null>(null);
@@ -53,28 +58,31 @@ export default function AddScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Question</Text>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.label}>{t('add.question')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="What is encapsulation?"
+          placeholder={t('add.questionPlaceholder')}
           placeholderTextColor={colors.muted}
           value={question}
           onChangeText={setQuestion}
           multiline
         />
 
-        <Text style={styles.label}>Answer</Text>
+        <Text style={styles.label}>{t('add.answer')}</Text>
         <TextInput
           style={[styles.input, styles.inputTall]}
-          placeholder="Bundling data and methods while controlling access to internal state."
+          placeholder={t('add.answerPlaceholder')}
           placeholderTextColor={colors.muted}
           value={answer}
           onChangeText={setAnswer}
           multiline
         />
 
-        <Text style={styles.label}>Subject</Text>
+        <Text style={styles.label}>{t('add.subject')}</Text>
         <View style={styles.subjectRow}>
           {subjects.map((s) => (
             <Pressable
@@ -86,7 +94,7 @@ export default function AddScreen() {
             </Pressable>
           ))}
           <Pressable style={styles.subjectChipAdd} onPress={() => setAddingSubject((v) => !v)}>
-            <Text style={styles.subjectChipAddText}>+ New</Text>
+            <Text style={styles.subjectChipAddText}>{t('add.newSubject')}</Text>
           </Pressable>
         </View>
 
@@ -94,7 +102,7 @@ export default function AddScreen() {
           <View style={styles.newSubjectRow}>
             <TextInput
               style={styles.newSubjectInput}
-              placeholder="Subject name"
+              placeholder={t('add.subjectNamePlaceholder')}
               placeholderTextColor={colors.muted}
               value={newSubjectName}
               onChangeText={setNewSubjectName}
@@ -102,79 +110,81 @@ export default function AddScreen() {
               onSubmitEditing={handleCreateSubject}
             />
             <Pressable style={styles.newSubjectSave} onPress={handleCreateSubject}>
-              <Text style={styles.newSubjectSaveText}>Add</Text>
+              <Text style={styles.newSubjectSaveText}>{t('add.add')}</Text>
             </Pressable>
           </View>
         )}
 
         <Pressable style={[styles.saveButton, !canSave && styles.saveButtonDisabled]} disabled={!canSave || saving} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save'}</Text>
+          <Text style={styles.saveButtonText}>{saving ? t('add.saving') : t('add.save')}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing(2.5), gap: spacing(1) },
-  label: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: spacing(2) },
-  input: {
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing(1.5),
-    fontSize: 16,
-    color: colors.text,
-    marginTop: spacing(1),
-  },
-  inputTall: { minHeight: 96, textAlignVertical: 'top' },
-  subjectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1), marginTop: spacing(1) },
-  subjectChip: {
-    paddingHorizontal: spacing(1.5),
-    paddingVertical: spacing(1),
-    borderRadius: 999,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  subjectChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  subjectChipText: { color: colors.text, fontWeight: '600' },
-  subjectChipTextActive: { color: '#fff' },
-  subjectChipAdd: {
-    paddingHorizontal: spacing(1.5),
-    paddingVertical: spacing(1),
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-  },
-  subjectChipAddText: { color: colors.primary, fontWeight: '600' },
-  newSubjectRow: { flexDirection: 'row', gap: spacing(1), marginTop: spacing(1) },
-  newSubjectInput: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing(1.5),
-    color: colors.text,
-  },
-  newSubjectSave: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing(2),
-    justifyContent: 'center',
-  },
-  newSubjectSaveText: { color: '#fff', fontWeight: '700' },
-  saveButton: {
-    marginTop: spacing(3),
-    backgroundColor: colors.primary,
-    paddingVertical: spacing(2),
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: { backgroundColor: colors.border },
-  saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    content: { padding: spacing(2.5), gap: spacing(1) },
+    label: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: spacing(2) },
+    input: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing(1.5),
+      fontSize: 16,
+      color: colors.text,
+      marginTop: spacing(1),
+    },
+    inputTall: { minHeight: 96, textAlignVertical: 'top' },
+    subjectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1), marginTop: spacing(1) },
+    subjectChip: {
+      paddingHorizontal: spacing(1.5),
+      paddingVertical: spacing(1),
+      borderRadius: 999,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    subjectChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    subjectChipText: { color: colors.text, fontWeight: '600' },
+    subjectChipTextActive: { color: '#fff' },
+    subjectChipAdd: {
+      paddingHorizontal: spacing(1.5),
+      paddingVertical: spacing(1),
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderStyle: 'dashed',
+    },
+    subjectChipAddText: { color: colors.primary, fontWeight: '600' },
+    newSubjectRow: { flexDirection: 'row', gap: spacing(1), marginTop: spacing(1) },
+    newSubjectInput: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing(1.5),
+      color: colors.text,
+    },
+    newSubjectSave: {
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing(2),
+      justifyContent: 'center',
+    },
+    newSubjectSaveText: { color: '#fff', fontWeight: '700' },
+    saveButton: {
+      marginTop: spacing(3),
+      backgroundColor: colors.primary,
+      paddingVertical: spacing(2),
+      borderRadius: radius.md,
+      alignItems: 'center',
+    },
+    saveButtonDisabled: { backgroundColor: colors.border },
+    saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  });
+}

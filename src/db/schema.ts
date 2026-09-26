@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'yodda.db';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 export async function migrateDatabase(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -40,6 +40,11 @@ export async function migrateDatabase(db: SQLiteDatabase) {
       reviewed_at TEXT NOT NULL,
       interval_days_before INTEGER NOT NULL,
       interval_days_after INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY NOT NULL,
+      value TEXT NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS idx_cards_due_at ON cards(due_at);

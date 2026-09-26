@@ -1,0 +1,304 @@
+export const en = {
+  'tabs.home': 'Home',
+  'tabs.library': 'Library',
+  'tabs.settings': 'Settings',
+
+  'home.greetingMorning': 'Good morning',
+  'home.greetingAfternoon': 'Good afternoon',
+  'home.greetingEvening': 'Good evening',
+  'home.today': 'TODAY',
+  'home.thingsToRemember': 'things to remember',
+  'home.startReview': 'Start Review',
+  'home.allCaughtUp': 'All caught up',
+  'home.learningNew': 'Learning · new',
+  'home.upcoming': 'Upcoming',
+  'home.tomorrow': 'Tomorrow',
+  'home.thisWeek': 'This week',
+  'home.mature': 'Mature',
+  'home.addKnowledge': 'Add knowledge',
+
+  'review.loading': 'Loading…',
+  'review.allDone': 'All done',
+  'review.reviewedCount_one': 'You reviewed {count} item.',
+  'review.reviewedCount_other': 'You reviewed {count} items.',
+  'review.nothingDue': 'Nothing was due right now.',
+  'review.backHome': 'Back to Home',
+  'review.showAnswer': 'Show answer',
+  'review.again': 'Again',
+  'review.hard': 'Hard',
+  'review.good': 'Good',
+  'review.easy': 'Easy',
+
+  'add.title': 'Add knowledge',
+  'add.question': 'Question',
+  'add.answer': 'Answer',
+  'add.subject': 'Subject',
+  'add.newSubject': '+ New',
+  'add.subjectNamePlaceholder': 'Subject name',
+  'add.add': 'Add',
+  'add.save': 'Save',
+  'add.saving': 'Saving…',
+  'add.questionPlaceholder': 'What is encapsulation?',
+  'add.answerPlaceholder': 'Bundling data and methods while controlling access to internal state.',
+
+  'library.title': 'Library',
+  'library.empty': 'No knowledge yet. Add your first item from Home.',
+  'library.cardCount_one': '{count} card',
+  'library.cardCount_other': '{count} cards',
+  'library.newCount': '{count} new',
+
+  'subject.title': 'Subject',
+  'subject.empty': 'No cards in this subject yet.',
+
+  'status.new': 'New',
+  'status.learning': 'Learning',
+  'status.review': 'Review',
+  'status.mature': 'Mature',
+
+  'settings.title': 'Settings',
+  'settings.notifications': 'Notifications',
+  'settings.dailyReminder': 'Daily reminder at 9:00 AM',
+  'settings.webHint': "Local notifications aren't available on web.",
+  'settings.data': 'Data',
+  'settings.dataText':
+    'Everything you add stays on this device only, stored locally in SQLite. There is no account and nothing is sent to the cloud.',
+  'settings.about': 'About',
+  'settings.aboutText': 'Yodda · Learn once. Remember longer.',
+  'settings.howItWorks': 'How it works →',
+
+  'menu.language': 'Language',
+  'menu.appearance': 'Appearance',
+  'menu.light': 'Light',
+  'menu.dark': 'Dark',
+  'menu.uzbek': 'Uzbek',
+  'menu.russian': 'Russian',
+  'menu.english': 'English',
+  'menu.done': 'Done',
+
+  'about.title': 'About Yodda',
+  'about.hero': 'Yodda',
+  'about.tagline': 'Learn once. Remember longer.',
+  'about.whatTitle': 'What Yodda does',
+  'about.whatBody':
+    "Yodda turns anything you want to remember into a short question and answer, then brings it back for review at the moment you're about to forget it — not before, and not too late. You never manage a schedule yourself; the app decides when each item is due.",
+  'about.howTitle': 'How the scheduling logic works',
+  'about.howBody1':
+    'Every card moves through four states: New (never reviewed), Learning (still fragile), Review (holding up over days), and Mature (holding up over weeks or months).',
+  'about.howBody2':
+    "After you reveal an answer, you rate how well you remembered it — Again, Hard, Good, or Easy. That rating feeds an algorithm derived from SM-2 (the method behind most modern spaced-repetition apps): remembering easily pushes the next review further out; struggling or forgetting brings it back sooner and resets its progress. Over repeated successful reviews, the interval between them grows — a few days, then a couple of weeks, then months — so your effort concentrates on what you're actually at risk of forgetting, not what you already know cold.",
+  'about.curveTitle': 'The forgetting curve',
+  'about.curveBody1':
+    "This isn't a new idea. In 1885, German psychologist Hermann Ebbinghaus ran memory experiments on himself and plotted how quickly newly learned information fades — the forgetting curve. He found memory drops off sharply within days of learning something, but each time it's successfully recalled, the curve flattens: the next drop-off is slower than the last.",
+  'about.curveBody2':
+    "Spaced repetition is the practical response to that curve — reviewing right as memory is about to fade, rather than on a fixed schedule or not at all. Yodda automates exactly that timing so you don't have to think about it.",
+  'about.usefulTitle': "Why it's useful",
+  'about.usefulBody':
+    'Most learning is wasted because review either never happens or happens too late, after the information is already gone and has to be relearned from scratch. Spacing reviews at increasing intervals is one of the most well-evidenced ways to move something from short-term into long-term memory, using far less total study time than re-reading or cramming.',
+  'about.privacyTitle': 'Privacy',
+  'about.privacyBody':
+    "Everything you add lives only on this device, in a local database. There's no account, no cloud sync, and nothing is ever sent anywhere.",
+} as const;
+
+export type TranslationKey = keyof typeof en;
+
+export const ru: Record<TranslationKey, string> = {
+  'tabs.home': 'Главная',
+  'tabs.library': 'Библиотека',
+  'tabs.settings': 'Настройки',
+
+  'home.greetingMorning': 'Доброе утро',
+  'home.greetingAfternoon': 'Добрый день',
+  'home.greetingEvening': 'Добрый вечер',
+  'home.today': 'СЕГОДНЯ',
+  'home.thingsToRemember': 'карточек на повторение',
+  'home.startReview': 'Начать повторение',
+  'home.allCaughtUp': 'Всё повторено',
+  'home.learningNew': 'Изучение · новые',
+  'home.upcoming': 'Предстоящие',
+  'home.tomorrow': 'Завтра',
+  'home.thisWeek': 'На этой неделе',
+  'home.mature': 'Освоено',
+  'home.addKnowledge': 'Добавить карточку',
+
+  'review.loading': 'Загрузка…',
+  'review.allDone': 'Готово',
+  'review.reviewedCount_one': 'Вы повторили {count} карточку.',
+  'review.reviewedCount_other': 'Вы повторили {count} карточек.',
+  'review.nothingDue': 'Сейчас нечего повторять.',
+  'review.backHome': 'На главную',
+  'review.showAnswer': 'Показать ответ',
+  'review.again': 'Снова',
+  'review.hard': 'Трудно',
+  'review.good': 'Хорошо',
+  'review.easy': 'Легко',
+
+  'add.title': 'Добавить карточку',
+  'add.question': 'Вопрос',
+  'add.answer': 'Ответ',
+  'add.subject': 'Тема',
+  'add.newSubject': '+ Новая',
+  'add.subjectNamePlaceholder': 'Название темы',
+  'add.add': 'Добавить',
+  'add.save': 'Сохранить',
+  'add.saving': 'Сохранение…',
+  'add.questionPlaceholder': 'Что такое инкапсуляция?',
+  'add.answerPlaceholder': 'Объединение данных и методов с ограничением доступа к внутреннему состоянию.',
+
+  'library.title': 'Библиотека',
+  'library.empty': 'Пока нет карточек. Добавьте первую с главного экрана.',
+  'library.cardCount_one': '{count} карточка',
+  'library.cardCount_other': '{count} карточек',
+  'library.newCount': '{count} новых',
+
+  'subject.title': 'Тема',
+  'subject.empty': 'В этой теме пока нет карточек.',
+
+  'status.new': 'Новая',
+  'status.learning': 'Изучение',
+  'status.review': 'Повторение',
+  'status.mature': 'Освоено',
+
+  'settings.title': 'Настройки',
+  'settings.notifications': 'Уведомления',
+  'settings.dailyReminder': 'Ежедневное напоминание в 9:00',
+  'settings.webHint': 'Локальные уведомления недоступны в вебе.',
+  'settings.data': 'Данные',
+  'settings.dataText':
+    'Всё, что вы добавляете, хранится только на этом устройстве, локально в SQLite. Нет аккаунта, и ничего не отправляется в облако.',
+  'settings.about': 'О приложении',
+  'settings.aboutText': 'Yodda · Учи один раз. Помни дольше.',
+  'settings.howItWorks': 'Как это работает →',
+
+  'menu.language': 'Язык',
+  'menu.appearance': 'Оформление',
+  'menu.light': 'Светлая',
+  'menu.dark': 'Тёмная',
+  'menu.uzbek': 'Узбекский',
+  'menu.russian': 'Русский',
+  'menu.english': 'Английский',
+  'menu.done': 'Готово',
+
+  'about.title': 'О Yodda',
+  'about.hero': 'Yodda',
+  'about.tagline': 'Учи один раз. Помни дольше.',
+  'about.whatTitle': 'Что делает Yodda',
+  'about.whatBody':
+    'Yodda превращает всё, что вы хотите запомнить, в короткий вопрос и ответ, а затем возвращает его на повторение именно в тот момент, когда вы вот-вот забудете — не раньше и не позже. Вам не нужно самим следить за расписанием: приложение само решает, когда пора повторить каждую карточку.',
+  'about.howTitle': 'Как работает логика повторений',
+  'about.howBody1':
+    'Каждая карточка проходит через четыре состояния: Новая (ещё не повторялась), Изучение (пока хрупкая), Повторение (держится несколько дней) и Освоено (держится неделями или месяцами).',
+  'about.howBody2':
+    'После того как вы открываете ответ, вы оцениваете, насколько хорошо вы его вспомнили — Снова, Трудно, Хорошо или Легко. Эта оценка идёт в алгоритм на основе SM-2 (метод, лежащий в основе большинства современных приложений для интервального повторения): лёгкое вспоминание отодвигает следующее повторение дальше; трудности или забывание возвращают карточку раньше и сбрасывают её прогресс. С каждым успешным повторением интервал между ними растёт — сначала несколько дней, потом пара недель, потом месяцы — так что ваши усилия концентрируются на том, что вы реально рискуете забыть, а не на том, что вы уже знаете наизусть.',
+  'about.curveTitle': 'Кривая забывания',
+  'about.curveBody1':
+    'Это не новая идея. В 1885 году немецкий психолог Герман Эббингауз провёл эксперименты на себе и построил график того, как быстро забывается только что выученная информация — кривую забывания. Он обнаружил, что память резко падает в первые дни после заучивания, но каждое успешное повторение делает кривую более пологой: следующее падение медленнее предыдущего.',
+  'about.curveBody2':
+    'Интервальное повторение — это практический ответ на эту кривую: повторять именно тогда, когда память вот-вот угаснет, а не по жёсткому расписанию и не никогда. Yodda автоматизирует именно этот момент, чтобы вам не приходилось об этом думать.',
+  'about.usefulTitle': 'Почему это полезно',
+  'about.usefulBody':
+    'Большая часть обучения пропадает впустую, потому что повторение либо вообще не происходит, либо происходит слишком поздно, когда информация уже забыта и её приходится учить заново. Повторение с увеличивающимися интервалами — один из наиболее доказанных способов перевести знание из кратковременной памяти в долговременную, затрачивая при этом гораздо меньше времени, чем перечитывание или зубрёжка перед экзаменом.',
+  'about.privacyTitle': 'Приватность',
+  'about.privacyBody':
+    'Всё, что вы добавляете, хранится только на этом устройстве, в локальной базе данных. Нет аккаунта, нет облачной синхронизации, ничего никуда не отправляется.',
+};
+
+export const uz: Record<TranslationKey, string> = {
+  'tabs.home': 'Bosh sahifa',
+  'tabs.library': 'Kutubxona',
+  'tabs.settings': 'Sozlamalar',
+
+  'home.greetingMorning': 'Xayrli tong',
+  'home.greetingAfternoon': 'Xayrli kun',
+  'home.greetingEvening': 'Xayrli kech',
+  'home.today': 'BUGUN',
+  'home.thingsToRemember': 'ta eslash kerak',
+  'home.startReview': 'Takrorlashni boshlash',
+  'home.allCaughtUp': 'Hammasi takrorlandi',
+  'home.learningNew': "O'rganilmoqda · yangi",
+  'home.upcoming': 'Yaqinlashib kelayotgan',
+  'home.tomorrow': 'Ertaga',
+  'home.thisWeek': 'Shu hafta',
+  'home.mature': "O'zlashtirilgan",
+  'home.addKnowledge': "Bilim qo'shish",
+
+  'review.loading': 'Yuklanmoqda…',
+  'review.allDone': 'Tayyor',
+  'review.reviewedCount_one': 'Siz {count} ta kartochkani takrorladingiz.',
+  'review.reviewedCount_other': 'Siz {count} ta kartochkani takrorladingiz.',
+  'review.nothingDue': "Hozircha takrorlanadigan narsa yo'q.",
+  'review.backHome': 'Bosh sahifaga',
+  'review.showAnswer': "Javobni ko'rsatish",
+  'review.again': 'Yana',
+  'review.hard': 'Qiyin',
+  'review.good': 'Yaxshi',
+  'review.easy': 'Oson',
+
+  'add.title': "Bilim qo'shish",
+  'add.question': 'Savol',
+  'add.answer': 'Javob',
+  'add.subject': "Mavzu",
+  'add.newSubject': '+ Yangi',
+  'add.subjectNamePlaceholder': 'Mavzu nomi',
+  'add.add': "Qo'shish",
+  'add.save': 'Saqlash',
+  'add.saving': 'Saqlanmoqda…',
+  'add.questionPlaceholder': 'Inkapsulyatsiya nima?',
+  'add.answerPlaceholder': "Ma'lumot va metodlarni birlashtirib, ichki holatga kirishni cheklash.",
+
+  'library.title': 'Kutubxona',
+  'library.empty': "Hali bilim yo'q. Bosh sahifadan birinchisini qo'shing.",
+  'library.cardCount_one': '{count} ta kartochka',
+  'library.cardCount_other': '{count} ta kartochka',
+  'library.newCount': '{count} ta yangi',
+
+  'subject.title': 'Mavzu',
+  'subject.empty': "Bu mavzuda hali kartochka yo'q.",
+
+  'status.new': 'Yangi',
+  'status.learning': "O'rganilmoqda",
+  'status.review': 'Takrorlash',
+  'status.mature': "O'zlashtirilgan",
+
+  'settings.title': 'Sozlamalar',
+  'settings.notifications': 'Bildirishnomalar',
+  'settings.dailyReminder': 'Har kuni soat 9:00 da eslatma',
+  'settings.webHint': "Lokal bildirishnomalar veb-brauzerda ishlamaydi.",
+  'settings.data': "Ma'lumotlar",
+  'settings.dataText':
+    "Qo'shgan barcha narsalaringiz faqat shu qurilmada, lokal SQLite bazasida saqlanadi. Hisob yo'q va hech narsa bulutga yuborilmaydi.",
+  'settings.about': 'Ilova haqida',
+  'settings.aboutText': "Yodda · Bir marta o'rgan. Uzoqroq esda saqla.",
+  'settings.howItWorks': 'Qanday ishlaydi →',
+
+  'menu.language': 'Til',
+  'menu.appearance': "Ko'rinish",
+  'menu.light': 'Yorug',
+  'menu.dark': 'Qorong\'u',
+  'menu.uzbek': "O'zbekcha",
+  'menu.russian': 'Ruscha',
+  'menu.english': 'Inglizcha',
+  'menu.done': 'Tayyor',
+
+  'about.title': 'Yodda haqida',
+  'about.hero': 'Yodda',
+  'about.tagline': "Bir marta o'rgan. Uzoqroq esda saqla.",
+  'about.whatTitle': 'Yodda nima qiladi',
+  'about.whatBody':
+    "Yodda eslab qolmoqchi bo'lgan har qanday narsangizni qisqa savol-javobga aylantiradi, so'ng uni unutish arafasida turgan aynan o'sha lahzada qayta ko'rsatadi — na erta, na kech. Jadvalni o'zingiz boshqarishingiz shart emas — qachon qaysi kartochkani takrorlash kerakligini ilova o'zi hal qiladi.",
+  'about.howTitle': 'Rejalashtirish mantig\'i qanday ishlaydi',
+  'about.howBody1':
+    "Har bir kartochka to'rtta holatdan o'tadi: Yangi (hali takrorlanmagan), O'rganilmoqda (hali beqaror), Takrorlash (bir necha kun davomida yodda turadi) va O'zlashtirilgan (haftalar yoki oylar davomida yodda turadi).",
+  'about.howBody2':
+    "Javobni ochganingizdan so'ng, uni qanchalik yaxshi eslab qolganingizni baholaysiz — Yana, Qiyin, Yaxshi yoki Oson. Bu baho SM-2 asosidagi algoritmga (aksariyat zamonaviy interval takrorlash ilovalari asosidagi usul) beriladi: oson eslab qolish keyingi takrorlashni uzoqroqqa suradi; qiynalish yoki unutish esa kartochkani tezroq qaytaradi va uning progressini qayta boshlaydi. Muvaffaqiyatli takrorlashlar ketma-ket davom etsa, ular orasidagi interval kattalashib boradi — avval bir necha kun, keyin bir necha hafta, keyin oylar — shunday qilib kuchingiz siz haqiqatan ham unutish xavfi bo'lgan narsalarga, allaqachon mukammal bilganlaringizga emas, to'planadi.",
+  'about.curveTitle': 'Unutish egri chizig\'i',
+  'about.curveBody1':
+    "Bu yangi g'oya emas. 1885-yilda nemis psixologi Hermann Ebbingxauz o'zi ustida xotira tajribalari o'tkazib, yangi o'rganilgan ma'lumot qanchalik tez unutilishini — unutish egri chizig'ini — chizib chiqdi. U xotira o'rganishdan keyingi bir necha kun ichida keskin pasayishini, ammo har safar muvaffaqiyatli eslab qolinganda egri chiziq tekislanib borishini aniqladi: keyingi pasayish avvalgisidan sekinroq bo'ladi.",
+  'about.curveBody2':
+    "Interval takrorlash — aynan shu egri chiziqqa amaliy javob: qat'iy jadval bo'yicha yoki umuman takrorlamaslik o'rniga, xotira so'nish arafasida turgan paytda takrorlash. Yodda aynan shu vaqtlashni avtomatlashtiradi, shunda siz bu haqda o'ylashingiz shart bo'lmaydi.",
+  'about.usefulTitle': 'Nega bu foydali',
+  'about.usefulBody':
+    "Ko'pgina o'rganishlar behuda ketadi, chunki takrorlash yo umuman bo'lmaydi, yo juda kech bo'ladi — bunda ma'lumot allaqachon unutilib, uni qayta boshidan o'rganishga to'g'ri keladi. Intervalini asta-sekin oshirib boruvchi takrorlash — bilimni qisqa muddatli xotiradan uzoq muddatli xotiraga o'tkazishning eng isbotlangan usullaridan biri, va bu qayta o'qish yoki shoshilinch yodlashga qaraganda ancha kam vaqt talab qiladi.",
+  'about.privacyTitle': 'Maxfiylik',
+  'about.privacyBody':
+    "Qo'shgan barcha narsalaringiz faqat shu qurilmada, lokal ma'lumotlar bazasida saqlanadi. Hisob yo'q, bulutli sinxronlash yo'q va hech narsa hech qayerga yuborilmaydi.",
+};
