@@ -128,6 +128,32 @@ accounts and an interactive login, so it's manual:
    faster. Once approved, both stores handle distribution — no further
    infrastructure needed since the app has no backend.
 
+## OTA updates (EAS Update)
+
+`expo-updates` is installed and configured (`app.json`'s `updates.url` +
+`runtimeVersion: { policy: "appVersion" }`, and a `channel` per build
+profile in `eas.json`). This means **JS/asset-only changes** — new
+screens, copy, translations, most bug fixes — can ship instantly to
+already-installed builds without going through the app stores or a new
+native build:
+
+```bash
+npx eas-cli@latest update --channel preview --message "what changed"
+```
+
+Or trigger it from GitHub Actions (`.github/workflows/eas-update.yml`,
+same `EXPO_TOKEN` secret as the build workflow) — pick a channel and it
+publishes.
+
+**This does not replace native builds.** Anything touching native code
+or config — new native dependencies, `app.json` permissions/icons/plugins,
+upgrading the Expo SDK — still needs a full `eas build` and, for
+already-published apps, a new store submission. `runtimeVersion` is tied
+to `version` in `app.json`: as long as that doesn't change, installed
+builds keep pulling OTA updates from their channel; bumping it (as you
+would for a new store release) requires a matching new build before
+updates apply again.
+
 ## What's intentionally not built yet
 
 Per the product plan, the MVP stays deliberately small: no AI card

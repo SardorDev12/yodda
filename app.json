@@ -53,6 +53,12 @@
       "typedRoutes": true
     },
     "owner": "walterobrien",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/163d6807-abaa-4b41-a26a-5a4aa7e6ee57"
+    },
     "extra": {
       "eas": {
         "projectId": "163d6807-abaa-4b41-a26a-5a4aa7e6ee57"
