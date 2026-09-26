@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OverflowMenu } from '@/components/OverflowMenu';
-import { getDueCards, recordReview } from '@/db/queries';
+import { getDueCards, getRevisionCards, recordReview } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, Rating } from '@/types';
@@ -14,6 +14,8 @@ import type { Card, Rating } from '@/types';
 export default function ReviewScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const { mode, subjectId } = useLocalSearchParams<{ mode?: string; subjectId?: string }>();
+  const isRevision = mode === 'revise';
   const { colors, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const RATINGS: { key: Rating; label: string; color: string }[] = useMemo(
@@ -31,8 +33,9 @@ export default function ReviewScreen() {
   const [reviewedCount, setReviewedCount] = useState(0);
 
   useEffect(() => {
-    getDueCards(db).then(setQueue);
-  }, [db]);
+    const load = isRevision ? getRevisionCards(db, subjectId) : getDueCards(db);
+    load.then(setQueue);
+  }, [db, isRevision, subjectId]);
 
   const current = queue?.[index];
 
@@ -63,7 +66,9 @@ export default function ReviewScreen() {
           <Ionicons name="checkmark-circle" size={64} color={colors.success} />
           <Text style={styles.doneTitle}>{t('review.allDone')}</Text>
           <Text style={styles.muted}>
-            {reviewedCount > 0 ? t('review.reviewedCount', { count: reviewedCount }) : t('review.nothingDue')}
+            {reviewedCount > 0
+              ? t('review.reviewedCount', { count: reviewedCount })
+              : t(isRevision ? 'review.nothingToRevise' : 'review.nothingDue')}
           </Text>
           <Pressable style={styles.closeButton} onPress={() => router.back()}>
             <Text style={styles.closeButtonText}>{t('review.backHome')}</Text>

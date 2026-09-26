@@ -1,7 +1,7 @@
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { listCardsBySubject } from '@/db/queries';
@@ -11,6 +11,7 @@ import type { Card, CardStatus } from '@/types';
 
 export default function SubjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
@@ -40,6 +41,16 @@ export default function SubjectDetailScreen() {
         keyExtractor={(c) => c.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
         ListEmptyComponent={<Text style={styles.empty}>{t('subject.empty')}</Text>}
+        ListHeaderComponent={
+          cards.length > 0 ? (
+            <Pressable
+              style={styles.reviewButton}
+              onPress={() => id && router.push(`/review?mode=revise&subjectId=${id}`)}
+            >
+              <Text style={styles.reviewButtonText}>{t('subject.reviewSubject')}</Text>
+            </Pressable>
+          ) : null
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.question}>{item.question}</Text>
@@ -75,5 +86,12 @@ function makeStyles(colors: ThemeColors) {
       marginTop: spacing(1),
       textTransform: 'uppercase',
     },
+    reviewButton: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: radius.md,
+      paddingVertical: spacing(1.5),
+      alignItems: 'center',
+    },
+    reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
   });
 }

@@ -57,6 +57,10 @@ export default function HomeScreen() {
         >
           <Text style={styles.startButtonText}>{dueToday === 0 ? t('home.allCaughtUp') : t('home.startReview')}</Text>
         </Pressable>
+
+        <Pressable style={styles.reviseButton} onPress={() => router.push('/review?mode=revise')}>
+          <Text style={styles.reviseButtonText}>{t('home.reviseAnytime')}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.row}>
@@ -116,6 +120,15 @@ function makeStyles(colors: ThemeColors) {
     },
     startButtonDisabled: { backgroundColor: colors.border },
     startButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+    reviseButton: {
+      marginTop: spacing(1),
+      paddingVertical: spacing(1.25),
+      paddingHorizontal: spacing(4),
+      borderRadius: radius.md,
+      width: '100%',
+      alignItems: 'center',
+    },
+    reviseButtonText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
     row: { flexDirection: 'row', gap: spacing(1.5) },
     smallCard: {
       flex: 1,

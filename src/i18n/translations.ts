@@ -16,12 +16,14 @@ export const en = {
   'home.thisWeek': 'This week',
   'home.mature': 'Mature',
   'home.addKnowledge': 'Add knowledge',
+  'home.reviseAnytime': 'Revise anytime',
 
   'review.loading': 'Loading…',
   'review.allDone': 'All done',
   'review.reviewedCount_one': 'You reviewed {count} item.',
   'review.reviewedCount_other': 'You reviewed {count} items.',
   'review.nothingDue': 'Nothing was due right now.',
+  'review.nothingToRevise': "There's nothing to revise here yet.",
   'review.backHome': 'Back to Home',
   'review.showAnswer': 'Show answer',
   'review.again': 'Again',
@@ -49,6 +51,7 @@ export const en = {
 
   'subject.title': 'Subject',
   'subject.empty': 'No cards in this subject yet.',
+  'subject.reviewSubject': 'Review this subject',
 
   'status.new': 'New',
   'status.learning': 'Learning',
@@ -119,12 +122,14 @@ export const ru: Record<TranslationKey, string> = {
   'home.thisWeek': 'На этой неделе',
   'home.mature': 'Освоено',
   'home.addKnowledge': 'Добавить карточку',
+  'home.reviseAnytime': 'Повторить в любое время',
 
   'review.loading': 'Загрузка…',
   'review.allDone': 'Готово',
   'review.reviewedCount_one': 'Вы повторили {count} карточку.',
   'review.reviewedCount_other': 'Вы повторили {count} карточек.',
   'review.nothingDue': 'Сейчас нечего повторять.',
+  'review.nothingToRevise': 'Здесь пока нечего повторять.',
   'review.backHome': 'На главную',
   'review.showAnswer': 'Показать ответ',
   'review.again': 'Снова',
@@ -152,6 +157,7 @@ export const ru: Record<TranslationKey, string> = {
 
   'subject.title': 'Тема',
   'subject.empty': 'В этой теме пока нет карточек.',
+  'subject.reviewSubject': 'Повторить эту тему',
 
   'status.new': 'Новая',
   'status.learning': 'Изучение',
@@ -220,12 +226,14 @@ export const uz: Record<TranslationKey, string> = {
   'home.thisWeek': 'Shu hafta',
   'home.mature': "O'zlashtirilgan",
   'home.addKnowledge': "Bilim qo'shish",
+  'home.reviseAnytime': "Istalgan vaqtda takrorlash",
 
   'review.loading': 'Yuklanmoqda…',
   'review.allDone': 'Tayyor',
   'review.reviewedCount_one': 'Siz {count} ta kartochkani takrorladingiz.',
   'review.reviewedCount_other': 'Siz {count} ta kartochkani takrorladingiz.',
   'review.nothingDue': "Hozircha takrorlanadigan narsa yo'q.",
+  'review.nothingToRevise': "Bu yerda hali takrorlaydigan narsa yo'q.",
   'review.backHome': 'Bosh sahifaga',
   'review.showAnswer': "Javobni ko'rsatish",
   'review.again': 'Yana',
@@ -253,6 +261,7 @@ export const uz: Record<TranslationKey, string> = {
 
   'subject.title': 'Mavzu',
   'subject.empty': "Bu mavzuda hali kartochka yo'q.",
+  'subject.reviewSubject': 'Bu mavzuni takrorlash',
 
   'status.new': 'Yangi',
   'status.learning': "O'rganilmoqda",

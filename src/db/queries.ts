@@ -102,6 +102,22 @@ export async function getDueCards(db: SQLiteDatabase, limit = 100): Promise<Card
   return rows.map(rowToCard);
 }
 
+/**
+ * On-demand review queue, ignoring due_at — lets a user revise whenever
+ * they want instead of only what's currently due. Optionally scoped to one
+ * subject. Ratings still feed the scheduler like a normal review.
+ */
+export async function getRevisionCards(db: SQLiteDatabase, subjectId?: string, limit = 200): Promise<Card[]> {
+  const rows = subjectId
+    ? await db.getAllAsync<any>(
+        'SELECT * FROM cards WHERE deleted = 0 AND subject_id = ? ORDER BY due_at ASC LIMIT ?',
+        subjectId,
+        limit
+      )
+    : await db.getAllAsync<any>('SELECT * FROM cards WHERE deleted = 0 ORDER BY due_at ASC LIMIT ?', limit);
+  return rows.map(rowToCard);
+}
+
 export interface HomeStats {
   dueToday: number;
   newCards: number;
