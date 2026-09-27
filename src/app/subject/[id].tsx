@@ -1,11 +1,22 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
-import { deleteCard, listCardsBySubject } from '@/db/queries';
+import { createCard, deleteCard, listCardsBySubject } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, CardStatus } from '@/types';
@@ -24,6 +35,10 @@ export default function SubjectDetailScreen() {
     mature: t('status.mature'),
   };
   const [cards, setCards] = useState<Card[]>([]);
+  const [addingCard, setAddingCard] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const loadCards = useCallback(() => {
     if (id) listCardsBySubject(db, id).then(setCards);
@@ -38,6 +53,20 @@ export default function SubjectDetailScreen() {
       };
     }, [db, id])
   );
+
+  async function handleCreateCard() {
+    if (!id || !question.trim() || !answer.trim()) return;
+    setSaving(true);
+    try {
+      await createCard(db, { subjectId: id, question, answer });
+      setQuestion('');
+      setAnswer('');
+      setAddingCard(false);
+      loadCards();
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function handleDeleteCard(cardId: string) {
     Alert.alert(t('edit.deleteConfirmTitle'), t('edit.deleteConfirmBody'), [
@@ -54,21 +83,62 @@ export default function SubjectDetailScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <FlatList
         data={cards}
         keyExtractor={(c) => c.id}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
         ListEmptyComponent={<Text style={styles.empty}>{t('subject.empty')}</Text>}
         ListHeaderComponent={
-          cards.length > 0 ? (
-            <Pressable
-              style={styles.reviewButton}
-              onPress={() => id && router.push(`/review?mode=revise&subjectId=${id}`)}
-            >
-              <Text style={styles.reviewButtonText}>{t('subject.reviewSubject')}</Text>
-            </Pressable>
-          ) : null
+          <View style={styles.headerGap}>
+            {cards.length > 0 && (
+              <Pressable
+                style={styles.reviewButton}
+                onPress={() => id && router.push(`/review?mode=revise&subjectId=${id}`)}
+              >
+                <Text style={styles.reviewButtonText}>{t('subject.reviewSubject')}</Text>
+              </Pressable>
+            )}
+
+            {addingCard ? (
+              <View style={styles.newCardForm}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('add.questionPlaceholder')}
+                  placeholderTextColor={colors.muted}
+                  value={question}
+                  onChangeText={setQuestion}
+                  multiline
+                />
+                <TextInput
+                  style={[styles.input, styles.inputTall]}
+                  placeholder={t('add.answerPlaceholder')}
+                  placeholderTextColor={colors.muted}
+                  value={answer}
+                  onChangeText={setAnswer}
+                  multiline
+                />
+                <View style={styles.newCardActions}>
+                  <Pressable style={styles.newCardCancel} onPress={() => setAddingCard(false)}>
+                    <Text style={styles.newCardCancelText}>{t('edit.cancel')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.newCardSave, (!question.trim() || !answer.trim()) && styles.newCardSaveDisabled]}
+                    disabled={!question.trim() || !answer.trim() || saving}
+                    onPress={handleCreateCard}
+                  >
+                    <Text style={styles.newCardSaveText}>{saving ? t('add.saving') : t('add.save')}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable style={styles.addCardButton} onPress={() => setAddingCard(true)}>
+                <Ionicons name="add" size={18} color={colors.primary} />
+                <Text style={styles.addCardButtonText}>{t('subject.newCard')}</Text>
+              </Pressable>
+            )}
+          </View>
         }
         renderItem={({ item }) => (
           <Pressable style={styles.card} onPress={() => router.push(`/edit-card?id=${item.id}`)}>
@@ -83,7 +153,7 @@ export default function SubjectDetailScreen() {
           </Pressable>
         )}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -116,5 +186,46 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
     },
     reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
+    headerGap: { gap: spacing(1.5) },
+    addCardButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing(0.5),
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderStyle: 'dashed',
+      paddingVertical: spacing(1.5),
+    },
+    addCardButtonText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+    newCardForm: { gap: spacing(1) },
+    input: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing(1.5),
+      fontSize: 15,
+      color: colors.text,
+    },
+    inputTall: { minHeight: 80, textAlignVertical: 'top' },
+    newCardActions: { flexDirection: 'row', gap: spacing(1) },
+    newCardCancel: {
+      flex: 1,
+      paddingVertical: spacing(1.25),
+      borderRadius: radius.md,
+      alignItems: 'center',
+    },
+    newCardCancelText: { color: colors.muted, fontWeight: '600', fontSize: 14 },
+    newCardSave: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      paddingVertical: spacing(1.25),
+      borderRadius: radius.md,
+      alignItems: 'center',
+    },
+    newCardSaveDisabled: { backgroundColor: colors.border },
+    newCardSaveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   });
 }

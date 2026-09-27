@@ -44,7 +44,7 @@ export default function EditCardScreen() {
   const canSave = question.trim().length > 0 && answer.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
         keyboardShouldPersistTaps="handled"

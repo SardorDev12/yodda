@@ -79,7 +79,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Pressable style={styles.addButton} onPress={() => router.push('/add')}>
+      <Pressable style={styles.addButton} onPress={() => router.push('/library')}>
         <Ionicons name="add-circle" size={22} color={colors.primary} />
         <Text style={styles.addButtonText}>{t('home.addKnowledge')}</Text>
       </Pressable>

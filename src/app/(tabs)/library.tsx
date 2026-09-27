@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
@@ -61,10 +61,11 @@ export default function LibraryScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <FlatList
         data={books}
         keyExtractor={(b) => b.id}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
         ListHeaderComponent={
           addingBook ? (
@@ -110,7 +111,7 @@ export default function LibraryScreen() {
           </Pressable>
         )}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
