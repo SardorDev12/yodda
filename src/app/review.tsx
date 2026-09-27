@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { OverflowMenu } from '@/components/OverflowMenu';
 import { getDueCards, getRevisionCards, recordReview } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
@@ -60,10 +59,6 @@ export default function ReviewScreen() {
   if (!current) {
     return (
       <SafeAreaView style={styles.root}>
-        <View style={styles.header}>
-          <View />
-          <OverflowMenu />
-        </View>
         <View style={styles.center}>
           <Ionicons name="checkmark-circle" size={64} color={colors.success} />
           <Text style={styles.doneTitle}>{t('review.allDone')}</Text>
@@ -89,7 +84,6 @@ export default function ReviewScreen() {
         <Text style={styles.progress}>
           {index + 1} / {queue.length}
         </Text>
-        <OverflowMenu />
       </View>
 
       <View style={styles.cardArea}>

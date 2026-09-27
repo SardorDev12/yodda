@@ -63,13 +63,6 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.row}>
-        <View style={styles.smallCard}>
-          <Text style={styles.smallCardNumber}>{stats?.newCards ?? 0}</Text>
-          <Text style={styles.smallCardLabel}>{t('home.learningNew')}</Text>
-        </View>
-      </View>
-
       <Text style={styles.sectionTitle}>{t('home.upcoming')}</Text>
       <View style={styles.upcomingRow}>
         <View style={styles.upcomingItem}>
@@ -129,17 +122,6 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
     },
     reviseButtonText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
-    row: { flexDirection: 'row', gap: spacing(1.5) },
-    smallCard: {
-      flex: 1,
-      backgroundColor: colors.card,
-      borderRadius: radius.md,
-      padding: spacing(2),
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    smallCardNumber: { fontSize: 24, fontWeight: '700', color: colors.text },
-    smallCardLabel: { fontSize: 13, color: colors.muted, marginTop: 2 },
     sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: spacing(1) },
     upcomingRow: { flexDirection: 'row', gap: spacing(1.5) },
     upcomingItem: {

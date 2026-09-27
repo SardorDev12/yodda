@@ -5,13 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { getSetting, setSetting } from '@/db/queries';
+import { LANGUAGES, type Language } from '@/i18n';
 import { exportBackup, importBackup } from '@/lib/backup';
 import { isWeb, MAX_REMINDERS, startReminderChecks, stopReminderChecks } from '@/lib/notifications';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { radius, spacing, type Scheme, type ThemeColors } from '@/theme';
 
 const DEFAULT_HOURS = [9, 14, 20];
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
+
+const LANGUAGE_LABEL_KEY: Record<Language, string> = {
+  uz: 'menu.uzbek',
+  ru: 'menu.russian',
+  en: 'menu.english',
+};
 
 function formatHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`;
@@ -21,7 +28,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
-  const { colors, reviewOrder, setReviewOrder, t } = useSettings();
+  const { colors, language, reviewOrder, scheme, setLanguage, setReviewOrder, setScheme, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [remindersOn, setRemindersOn] = useState(false);
@@ -107,6 +114,40 @@ export default function SettingsScreen() {
       style={styles.root}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
     >
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('menu.language')}</Text>
+        <View style={styles.orderRow}>
+          {LANGUAGES.map((lng) => (
+            <Pressable
+              key={lng}
+              style={[styles.orderChip, language === lng && styles.orderChipActive]}
+              onPress={() => setLanguage(lng)}
+            >
+              <Text style={[styles.orderChipText, language === lng && styles.orderChipTextActive]}>
+                {t(LANGUAGE_LABEL_KEY[lng])}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('menu.appearance')}</Text>
+        <View style={styles.orderRow}>
+          {(['light', 'dark'] as Scheme[]).map((s) => (
+            <Pressable
+              key={s}
+              style={[styles.orderChip, scheme === s && styles.orderChipActive]}
+              onPress={() => setScheme(s)}
+            >
+              <Text style={[styles.orderChipText, scheme === s && styles.orderChipTextActive]}>
+                {t(s === 'light' ? 'menu.light' : 'menu.dark')}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.reviewOrder')}</Text>
         <View style={styles.orderRow}>

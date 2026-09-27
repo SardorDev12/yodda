@@ -4,7 +4,6 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { OverflowMenu } from '@/components/OverflowMenu';
 import { DATABASE_NAME, migrateDatabase } from '@/db/schema';
 import { syncAndroidChrome } from '@/lib/navigation-bar';
 import { SettingsProvider, useSettings } from '@/store/settings-context';
@@ -29,7 +28,6 @@ function Navigator() {
           headerShadowVisible: false,
           headerTintColor: colors.text,
           contentStyle: { backgroundColor: colors.bg },
-          headerRight: () => <OverflowMenu />,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

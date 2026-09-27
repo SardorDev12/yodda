@@ -3,7 +3,6 @@ import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 
 import { EdgeSwipeZones } from '@/components/EdgeSwipeZones';
-import { OverflowMenu } from '@/components/OverflowMenu';
 import { useSettings } from '@/store/settings-context';
 
 export default function TabsLayout() {
@@ -16,7 +15,6 @@ export default function TabsLayout() {
           headerStyle: { backgroundColor: colors.bg },
           headerShadowVisible: false,
           headerTintColor: colors.text,
-          headerRight: () => <OverflowMenu />,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.muted,
           tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
