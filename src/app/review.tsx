@@ -16,7 +16,7 @@ export default function ReviewScreen() {
   const router = useRouter();
   const { mode, subjectId } = useLocalSearchParams<{ mode?: string; subjectId?: string }>();
   const isRevision = mode === 'revise';
-  const { colors, t } = useSettings();
+  const { colors, reviewOrder, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const RATINGS: { key: Rating; label: string; color: string }[] = useMemo(
     () => [
@@ -38,6 +38,8 @@ export default function ReviewScreen() {
   }, [db, isRevision, subjectId]);
 
   const current = queue?.[index];
+  const front = reviewOrder === 'answer' ? current?.answer : current?.question;
+  const back = reviewOrder === 'answer' ? current?.question : current?.answer;
 
   async function handleRate(rating: Rating) {
     if (!current) return;
@@ -91,12 +93,12 @@ export default function ReviewScreen() {
       </View>
 
       <View style={styles.cardArea}>
-        <Text style={styles.question}>{current.question}</Text>
+        <Text style={styles.question}>{front}</Text>
 
         {revealed && (
           <View style={styles.answerBox}>
             <View style={styles.divider} />
-            <Text style={styles.answer}>{current.answer}</Text>
+            <Text style={styles.answer}>{back}</Text>
           </View>
         )}
       </View>

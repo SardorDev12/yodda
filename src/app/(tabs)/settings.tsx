@@ -21,7 +21,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
-  const { colors, t } = useSettings();
+  const { colors, reviewOrder, setReviewOrder, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [remindersOn, setRemindersOn] = useState(false);
@@ -107,6 +107,28 @@ export default function SettingsScreen() {
       style={styles.root}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
     >
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('settings.reviewOrder')}</Text>
+        <View style={styles.orderRow}>
+          <Pressable
+            style={[styles.orderChip, reviewOrder === 'question' && styles.orderChipActive]}
+            onPress={() => setReviewOrder('question')}
+          >
+            <Text style={[styles.orderChipText, reviewOrder === 'question' && styles.orderChipTextActive]}>
+              {t('settings.reviewOrderQuestionFirst')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.orderChip, reviewOrder === 'answer' && styles.orderChipActive]}
+            onPress={() => setReviewOrder('answer')}
+          >
+            <Text style={[styles.orderChipText, reviewOrder === 'answer' && styles.orderChipTextActive]}>
+              {t('settings.reviewOrderAnswerFirst')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
         <View style={styles.rowBetween}>
@@ -201,6 +223,19 @@ function makeStyles(colors: ThemeColors) {
     rowLabel: { fontSize: 15, color: colors.text },
     hint: { fontSize: 13, color: colors.muted, lineHeight: 18 },
     subLabel: { fontSize: 12, fontWeight: '700', color: colors.muted, marginTop: spacing(1) },
+    orderRow: { flexDirection: 'row', gap: spacing(1) },
+    orderChip: {
+      flex: 1,
+      paddingVertical: spacing(1.25),
+      paddingHorizontal: spacing(1),
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+    },
+    orderChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    orderChipText: { color: colors.text, fontWeight: '600', fontSize: 13, textAlign: 'center' },
+    orderChipTextActive: { color: '#fff' },
     link: { fontSize: 13, color: colors.primary, fontWeight: '600' },
     countRow: { flexDirection: 'row', gap: spacing(1) },
     countChip: {

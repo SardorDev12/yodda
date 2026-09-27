@@ -59,6 +59,9 @@ export const en = {
   'status.mature': 'Mature',
 
   'settings.title': 'Settings',
+  'settings.reviewOrder': 'Review order',
+  'settings.reviewOrderQuestionFirst': 'Question → Answer',
+  'settings.reviewOrderAnswerFirst': 'Answer → Question',
   'settings.notifications': 'Notifications',
   'settings.dailyReminder': 'Daily reminder',
   'settings.reminderCount': 'How many times',
@@ -174,6 +177,9 @@ export const ru: Record<TranslationKey, string> = {
   'status.mature': 'Освоено',
 
   'settings.title': 'Настройки',
+  'settings.reviewOrder': 'Порядок повторения',
+  'settings.reviewOrderQuestionFirst': 'Вопрос → Ответ',
+  'settings.reviewOrderAnswerFirst': 'Ответ → Вопрос',
   'settings.notifications': 'Уведомления',
   'settings.dailyReminder': 'Ежедневное напоминание',
   'settings.reminderCount': 'Сколько раз',
@@ -286,6 +292,9 @@ export const uz: Record<TranslationKey, string> = {
   'status.mature': "O'zlashtirilgan",
 
   'settings.title': 'Sozlamalar',
+  'settings.reviewOrder': 'Takrorlash tartibi',
+  'settings.reviewOrderQuestionFirst': "Savol → Javob",
+  'settings.reviewOrderAnswerFirst': "Javob → Savol",
   'settings.notifications': 'Bildirishnomalar',
   'settings.dailyReminder': 'Har kunlik eslatma',
   'settings.reminderCount': 'Necha marta',
