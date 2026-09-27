@@ -1,8 +1,11 @@
+import * as BackgroundTask from 'expo-background-task';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { REMINDER_TASK_NAME } from '@/tasks/reminderTask';
+
 export const MAX_REMINDERS = 3;
-const REMINDER_ID = (index: number) => `yodda-reminder-${index}`;
+export const isWeb = Platform.OS === 'web';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -21,40 +24,19 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 /**
- * Replaces all scheduled daily reminders with one per hour in `hours`
- * (each at minute 0). Pass an empty array to just cancel everything.
+ * Starts the background check (src/tasks/reminderTask.ts) that decides,
+ * roughly every 15 minutes, whether it's time to show a reminder — it
+ * reads the configured hours/count straight from settings each run, so
+ * changing them doesn't require re-registering anything here.
  */
-export async function scheduleReminders(hours: number[]): Promise<void> {
-  await cancelAllReminders();
-  if (hours.length === 0) return;
-
+export async function startReminderChecks(): Promise<void> {
+  if (isWeb) return;
   const granted = await requestNotificationPermission();
   if (!granted) return;
-
-  await Promise.all(
-    hours.slice(0, MAX_REMINDERS).map((hour, index) =>
-      Notifications.scheduleNotificationAsync({
-        identifier: REMINDER_ID(index),
-        content: {
-          title: 'Ready to recall',
-          body: 'Take a few minutes to keep them fresh.',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour,
-          minute: 0,
-        },
-      })
-    )
-  );
+  await BackgroundTask.registerTaskAsync(REMINDER_TASK_NAME, { minimumInterval: 15 });
 }
 
-export async function cancelAllReminders(): Promise<void> {
-  await Promise.all(
-    Array.from({ length: MAX_REMINDERS }, (_, index) =>
-      Notifications.cancelScheduledNotificationAsync(REMINDER_ID(index)).catch(() => {})
-    )
-  );
+export async function stopReminderChecks(): Promise<void> {
+  if (isWeb) return;
+  await BackgroundTask.unregisterTaskAsync(REMINDER_TASK_NAME).catch(() => {});
 }
-
-export const isWeb = Platform.OS === 'web';

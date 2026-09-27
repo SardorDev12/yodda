@@ -8,6 +8,10 @@ import { OverflowMenu } from '@/components/OverflowMenu';
 import { DATABASE_NAME, migrateDatabase } from '@/db/schema';
 import { syncAndroidChrome } from '@/lib/navigation-bar';
 import { SettingsProvider, useSettings } from '@/store/settings-context';
+// Registers the background task definition unconditionally at startup —
+// required so it also runs on a headless background launch, not just
+// while the app is open. Side-effect import; keep it, don't remove.
+import '@/tasks/reminderTask';
 
 function Navigator() {
   const { colors, scheme, t } = useSettings();

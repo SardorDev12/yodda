@@ -6,7 +6,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 
 import { getSetting, setSetting } from '@/db/queries';
 import { exportBackup, importBackup } from '@/lib/backup';
-import { cancelAllReminders, isWeb, MAX_REMINDERS, scheduleReminders } from '@/lib/notifications';
+import { isWeb, MAX_REMINDERS, startReminderChecks, stopReminderChecks } from '@/lib/notifications';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 
@@ -51,9 +51,9 @@ export default function SettingsScreen() {
     ]);
     if (isWeb) return;
     if (on) {
-      await scheduleReminders(hours);
+      await startReminderChecks();
     } else {
-      await cancelAllReminders();
+      await stopReminderChecks();
     }
   }
 
@@ -66,19 +66,15 @@ export default function SettingsScreen() {
     const hours = Array.from({ length: count }, (_, i) => reminderHours[i] ?? DEFAULT_HOURS[i] ?? 9);
     setReminderCount(count);
     setReminderHours(hours);
-    if (remindersOn) await persistAndSchedule(true, count, hours);
-    else {
-      await setSetting(db, 'notifCount', String(count));
-      await setSetting(db, 'notifHours', JSON.stringify(hours));
-    }
+    await setSetting(db, 'notifCount', String(count));
+    await setSetting(db, 'notifHours', JSON.stringify(hours));
   }
 
   async function changeHour(slot: number, hour: number) {
     const hours = reminderHours.map((h, i) => (i === slot ? hour : h));
     setReminderHours(hours);
     setPickerSlot(null);
-    if (remindersOn) await persistAndSchedule(true, reminderCount, hours);
-    else await setSetting(db, 'notifHours', JSON.stringify(hours));
+    await setSetting(db, 'notifHours', JSON.stringify(hours));
   }
 
   async function handleExport() {
