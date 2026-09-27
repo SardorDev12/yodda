@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createSubject, listSubjects } from '@/db/queries';
+import { createSubject, deleteSubject, listSubjects } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { SubjectWithCounts } from '@/types';
@@ -42,6 +42,20 @@ export default function BookDetailScreen() {
     setNewUnitName('');
     setAddingUnit(false);
     loadUnits();
+  }
+
+  function handleDeleteUnit(unitId: string) {
+    Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
+      { text: t('edit.cancel'), style: 'cancel' },
+      {
+        text: t('book.deleteUnit'),
+        style: 'destructive',
+        onPress: async () => {
+          await deleteSubject(db, unitId);
+          loadUnits();
+        },
+      },
+    ]);
   }
 
   return (
@@ -88,6 +102,9 @@ export default function BookDetailScreen() {
                   <Text style={styles.badgeText}>{item.dueToday}</Text>
                 </View>
               )}
+              <Pressable hitSlop={8} onPress={() => handleDeleteUnit(item.id)}>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              </Pressable>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </View>
           </Pressable>

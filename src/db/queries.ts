@@ -134,6 +134,21 @@ export async function createSubject(db: SQLiteDatabase, bookId: string, name: st
   return { id, bookId, name: name.trim(), createdAt: now, updatedAt: now };
 }
 
+export async function deleteSubject(db: SQLiteDatabase, subjectId: string): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM cards WHERE subject_id = ?', subjectId);
+    await db.runAsync('DELETE FROM subjects WHERE id = ?', subjectId);
+  });
+}
+
+export async function deleteBook(db: SQLiteDatabase, bookId: string): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM cards WHERE subject_id IN (SELECT id FROM subjects WHERE book_id = ?)', bookId);
+    await db.runAsync('DELETE FROM subjects WHERE book_id = ?', bookId);
+    await db.runAsync('DELETE FROM books WHERE id = ?', bookId);
+  });
+}
+
 export async function createCard(
   db: SQLiteDatabase,
   input: { subjectId: string; question: string; answer: string }

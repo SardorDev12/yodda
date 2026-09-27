@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createBook, listBooks } from '@/db/queries';
+import { createBook, deleteBook, listBooks } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { BookWithCounts } from '@/types';
@@ -43,6 +43,20 @@ export default function LibraryScreen() {
     setNewBookName('');
     setAddingBook(false);
     loadBooks();
+  }
+
+  function handleDeleteBook(bookId: string) {
+    Alert.alert(t('library.deleteBookConfirmTitle'), t('library.deleteBookConfirmBody'), [
+      { text: t('edit.cancel'), style: 'cancel' },
+      {
+        text: t('library.deleteBook'),
+        style: 'destructive',
+        onPress: async () => {
+          await deleteBook(db, bookId);
+          loadBooks();
+        },
+      },
+    ]);
   }
 
   return (
@@ -89,6 +103,9 @@ export default function LibraryScreen() {
                   <Text style={styles.badgeText}>{item.dueToday}</Text>
                 </View>
               )}
+              <Pressable hitSlop={8} onPress={() => handleDeleteBook(item.id)}>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              </Pressable>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </View>
           </Pressable>
