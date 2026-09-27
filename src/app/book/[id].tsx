@@ -65,27 +65,34 @@ export default function BookDetailScreen() {
         keyExtractor={(s) => s.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
         ListHeaderComponent={
-          addingUnit ? (
-            <View style={styles.newUnitRow}>
-              <TextInput
-                style={styles.newUnitInput}
-                placeholder={t('book.unitNamePlaceholder')}
-                placeholderTextColor={colors.muted}
-                value={newUnitName}
-                onChangeText={setNewUnitName}
-                autoFocus
-                onSubmitEditing={handleCreateUnit}
-              />
-              <Pressable style={styles.newUnitSave} onPress={handleCreateUnit}>
-                <Text style={styles.newUnitSaveText}>{t('add.add')}</Text>
+          <View style={styles.headerGap}>
+            {units.length > 0 && (
+              <Pressable style={styles.reviewButton} onPress={() => id && router.push(`/review?mode=revise&bookId=${id}`)}>
+                <Text style={styles.reviewButtonText}>{t('book.reviewBook')}</Text>
               </Pressable>
-            </View>
-          ) : (
-            <Pressable style={styles.addUnitButton} onPress={() => setAddingUnit(true)}>
-              <Ionicons name="add" size={18} color={colors.primary} />
-              <Text style={styles.addUnitButtonText}>{t('book.newUnit')}</Text>
-            </Pressable>
-          )
+            )}
+            {addingUnit ? (
+              <View style={styles.newUnitRow}>
+                <TextInput
+                  style={styles.newUnitInput}
+                  placeholder={t('book.unitNamePlaceholder')}
+                  placeholderTextColor={colors.muted}
+                  value={newUnitName}
+                  onChangeText={setNewUnitName}
+                  autoFocus
+                  onSubmitEditing={handleCreateUnit}
+                />
+                <Pressable style={styles.newUnitSave} onPress={handleCreateUnit}>
+                  <Text style={styles.newUnitSaveText}>{t('add.add')}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable style={styles.addUnitButton} onPress={() => setAddingUnit(true)}>
+                <Ionicons name="add" size={18} color={colors.primary} />
+                <Text style={styles.addUnitButtonText}>{t('book.newUnit')}</Text>
+              </Pressable>
+            )}
+          </View>
         }
         ListEmptyComponent={<Text style={styles.empty}>{t('book.empty')}</Text>}
         renderItem={({ item }) => (
@@ -131,6 +138,14 @@ function makeStyles(colors: ThemeColors) {
       paddingVertical: spacing(1.5),
     },
     addUnitButtonText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+    headerGap: { gap: spacing(1.5) },
+    reviewButton: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: radius.md,
+      paddingVertical: spacing(1.5),
+      alignItems: 'center',
+    },
+    reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
     newUnitRow: { flexDirection: 'row', gap: spacing(1) },
     newUnitInput: {
       flex: 1,

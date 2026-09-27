@@ -68,6 +68,7 @@ export const en = {
 
   'book.title': 'Book',
   'book.empty': 'No units in this book yet.',
+  'book.reviewBook': 'Review this book',
   'book.newUnit': 'New unit',
   'book.unitNamePlaceholder': 'Unit name',
   'book.deleteUnit': 'Delete unit',
@@ -210,6 +211,7 @@ export const ru: Record<TranslationKey, string> = {
 
   'book.title': 'Книга',
   'book.empty': 'В этой книге пока нет разделов.',
+  'book.reviewBook': 'Повторить эту книгу',
   'book.newUnit': 'Новый раздел',
   'book.unitNamePlaceholder': 'Название раздела',
   'book.deleteUnit': 'Удалить раздел',
@@ -349,6 +351,7 @@ export const uz: Record<TranslationKey, string> = {
 
   'book.title': 'Kitob',
   'book.empty': "Bu kitobda hali bo'lim yo'q.",
+  'book.reviewBook': 'Bu kitobni takrorlash',
   'book.newUnit': "Yangi bo'lim",
   'book.unitNamePlaceholder': "Bo'lim nomi",
   'book.deleteUnit': "Bo'limni o'chirish",

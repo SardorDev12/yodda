@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getDueCards, getRevisionCards, recordReview } from '@/db/queries';
+import { getDueCards, getRevisionCards, getRevisionCardsByBook, recordReview } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, Rating } from '@/types';
@@ -13,7 +13,7 @@ import type { Card, Rating } from '@/types';
 export default function ReviewScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
-  const { mode, subjectId } = useLocalSearchParams<{ mode?: string; subjectId?: string }>();
+  const { mode, subjectId, bookId } = useLocalSearchParams<{ mode?: string; subjectId?: string; bookId?: string }>();
   const isRevision = mode === 'revise';
   const { colors, reviewOrder, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -32,9 +32,13 @@ export default function ReviewScreen() {
   const [reviewedCount, setReviewedCount] = useState(0);
 
   useEffect(() => {
-    const load = isRevision ? getRevisionCards(db, subjectId) : getDueCards(db);
+    const load = !isRevision
+      ? getDueCards(db)
+      : bookId
+        ? getRevisionCardsByBook(db, bookId)
+        : getRevisionCards(db, subjectId);
     load.then(setQueue);
-  }, [db, isRevision, subjectId]);
+  }, [db, isRevision, subjectId, bookId]);
 
   const current = queue?.[index];
   const front = reviewOrder === 'answer' ? current?.answer : current?.question;

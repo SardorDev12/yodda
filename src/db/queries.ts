@@ -205,6 +205,22 @@ export async function getRevisionCards(db: SQLiteDatabase, subjectId?: string, l
   return rows.map(rowToCard);
 }
 
+/**
+ * Same as getRevisionCards, but scoped to every unit inside one book
+ * rather than a single unit.
+ */
+export async function getRevisionCardsByBook(db: SQLiteDatabase, bookId: string, limit = 200): Promise<Card[]> {
+  const rows = await db.getAllAsync<any>(
+    `SELECT c.* FROM cards c
+      JOIN subjects s ON s.id = c.subject_id
+      WHERE c.deleted = 0 AND s.book_id = ?
+      ORDER BY c.due_at ASC LIMIT ?`,
+    bookId,
+    limit
+  );
+  return rows.map(rowToCard);
+}
+
 export interface HomeStats {
   dueToday: number;
   newCards: number;
