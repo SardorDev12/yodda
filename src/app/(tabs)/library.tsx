@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { RowMenu } from '@/components/RowMenu';
 import { createBook, deleteBook, listBooks } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
@@ -103,9 +104,7 @@ export default function LibraryScreen() {
                   <Text style={styles.badgeText}>{item.dueToday}</Text>
                 </View>
               )}
-              <Pressable hitSlop={8} onPress={() => handleDeleteBook(item.id)}>
-                <Ionicons name="trash-outline" size={18} color={colors.danger} />
-              </Pressable>
+              <RowMenu items={[{ label: t('library.deleteBook'), destructive: true, onPress: () => handleDeleteBook(item.id) }]} />
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </View>
           </Pressable>

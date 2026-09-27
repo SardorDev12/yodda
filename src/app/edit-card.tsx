@@ -1,10 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { deleteCard, getCard, updateCard } from '@/db/queries';
+import { getCard, updateCard } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 
@@ -41,21 +41,6 @@ export default function EditCardScreen() {
     }
   }
 
-  function handleDelete() {
-    if (!id) return;
-    Alert.alert(t('edit.deleteConfirmTitle'), t('edit.deleteConfirmBody'), [
-      { text: t('edit.cancel'), style: 'cancel' },
-      {
-        text: t('edit.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          await deleteCard(db, id);
-          router.back();
-        },
-      },
-    ]);
-  }
-
   const canSave = question.trim().length > 0 && answer.trim().length > 0;
 
   return (
@@ -84,10 +69,6 @@ export default function EditCardScreen() {
 
         <Pressable style={[styles.saveButton, !canSave && styles.saveButtonDisabled]} disabled={!canSave || saving} onPress={handleSave}>
           <Text style={styles.saveButtonText}>{saving ? t('edit.saving') : t('edit.save')}</Text>
-        </Pressable>
-
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteButtonText}>{t('edit.delete')}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -119,12 +100,5 @@ function makeStyles(colors: ThemeColors) {
     },
     saveButtonDisabled: { backgroundColor: colors.border },
     saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-    deleteButton: {
-      marginTop: spacing(1.5),
-      paddingVertical: spacing(1.5),
-      borderRadius: radius.md,
-      alignItems: 'center',
-    },
-    deleteButtonText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
   });
 }
