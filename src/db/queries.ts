@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { scheduler } from '@/scheduler';
-import type { Card, Rating, Subject, SubjectWithCounts } from '@/types';
+import type { Book, BookWithCounts, Card, Rating, Subject, SubjectWithCounts } from '@/types';
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -24,22 +24,88 @@ function rowToCard(row: any): Card {
   };
 }
 
-export async function listSubjects(db: SQLiteDatabase): Promise<SubjectWithCounts[]> {
+export async function listBooks(db: SQLiteDatabase): Promise<BookWithCounts[]> {
   const now = new Date().toISOString();
   const rows = await db.getAllAsync<any>(
     `SELECT
-        s.id, s.name, s.created_at, s.updated_at,
+        b.id, b.name, b.created_at, b.updated_at,
+        COUNT(DISTINCT s.id) AS unit_count,
         COUNT(c.id) FILTER (WHERE c.deleted = 0) AS total_cards,
-        COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today,
-        COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.status = 'new') AS new_cards
-      FROM subjects s
+        COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today
+      FROM books b
+      LEFT JOIN subjects s ON s.book_id = b.id
       LEFT JOIN cards c ON c.subject_id = s.id
-      GROUP BY s.id
-      ORDER BY s.created_at ASC`,
+      GROUP BY b.id
+      ORDER BY b.created_at ASC`,
     now
   );
   return rows.map((row) => ({
     id: row.id,
+    name: row.name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    unitCount: row.unit_count,
+    totalCards: row.total_cards,
+    dueToday: row.due_today,
+  }));
+}
+
+export async function createBook(db: SQLiteDatabase, name: string): Promise<Book> {
+  const id = newId();
+  const now = new Date().toISOString();
+  await db.runAsync('INSERT INTO books (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)', id, name.trim(), now, now);
+  return { id, name: name.trim(), createdAt: now, updatedAt: now };
+}
+
+export async function ensureBookExists(db: SQLiteDatabase, book: Book): Promise<void> {
+  const existing = await db.getFirstAsync<any>('SELECT id FROM books WHERE id = ?', book.id);
+  if (existing) return;
+  await db.runAsync(
+    'INSERT INTO books (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+    book.id,
+    book.name,
+    book.createdAt,
+    book.updatedAt
+  );
+}
+
+export async function getAllBooksForSync(db: SQLiteDatabase): Promise<Book[]> {
+  const rows = await db.getAllAsync<any>('SELECT * FROM books ORDER BY created_at ASC');
+  return rows.map((row) => ({ id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at }));
+}
+
+export async function listSubjects(db: SQLiteDatabase, bookId?: string): Promise<SubjectWithCounts[]> {
+  const now = new Date().toISOString();
+  const rows = bookId
+    ? await db.getAllAsync<any>(
+        `SELECT
+            s.id, s.book_id, s.name, s.created_at, s.updated_at,
+            COUNT(c.id) FILTER (WHERE c.deleted = 0) AS total_cards,
+            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today,
+            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.status = 'new') AS new_cards
+          FROM subjects s
+          LEFT JOIN cards c ON c.subject_id = s.id
+          WHERE s.book_id = ?
+          GROUP BY s.id
+          ORDER BY s.created_at ASC`,
+        now,
+        bookId
+      )
+    : await db.getAllAsync<any>(
+        `SELECT
+            s.id, s.book_id, s.name, s.created_at, s.updated_at,
+            COUNT(c.id) FILTER (WHERE c.deleted = 0) AS total_cards,
+            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today,
+            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.status = 'new') AS new_cards
+          FROM subjects s
+          LEFT JOIN cards c ON c.subject_id = s.id
+          GROUP BY s.id
+          ORDER BY s.created_at ASC`,
+        now
+      );
+  return rows.map((row) => ({
+    id: row.id,
+    bookId: row.book_id,
     name: row.name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -49,17 +115,23 @@ export async function listSubjects(db: SQLiteDatabase): Promise<SubjectWithCount
   }));
 }
 
-export async function createSubject(db: SQLiteDatabase, name: string): Promise<Subject> {
+export async function getBook(db: SQLiteDatabase, bookId: string): Promise<Book | null> {
+  const row = await db.getFirstAsync<any>('SELECT * FROM books WHERE id = ?', bookId);
+  return row ? { id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at } : null;
+}
+
+export async function createSubject(db: SQLiteDatabase, bookId: string, name: string): Promise<Subject> {
   const id = newId();
   const now = new Date().toISOString();
   await db.runAsync(
-    'INSERT INTO subjects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+    'INSERT INTO subjects (id, book_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     id,
+    bookId,
     name.trim(),
     now,
     now
   );
-  return { id, name: name.trim(), createdAt: now, updatedAt: now };
+  return { id, bookId, name: name.trim(), createdAt: now, updatedAt: now };
 }
 
 export async function createCard(
@@ -280,8 +352,9 @@ export async function ensureSubjectExists(db: SQLiteDatabase, subject: Subject):
   const existing = await db.getFirstAsync<any>('SELECT id FROM subjects WHERE id = ?', subject.id);
   if (existing) return;
   await db.runAsync(
-    'INSERT INTO subjects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+    'INSERT INTO subjects (id, book_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     subject.id,
+    subject.bookId,
     subject.name,
     subject.createdAt,
     subject.updatedAt

@@ -2,8 +2,16 @@ export type CardStatus = 'new' | 'learning' | 'review' | 'mature';
 
 export type Rating = 'again' | 'hard' | 'good' | 'easy';
 
+export interface Book {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Subject {
   id: string;
+  bookId: string;
   name: string;
   createdAt: string;
   updatedAt: string;
@@ -37,4 +45,10 @@ export interface SubjectWithCounts extends Subject {
   totalCards: number;
   dueToday: number;
   newCards: number;
+}
+
+export interface BookWithCounts extends Book {
+  unitCount: number;
+  totalCards: number;
+  dueToday: number;
 }

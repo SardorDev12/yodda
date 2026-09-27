@@ -3,15 +3,23 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { ensureSubjectExists, getAllCardsForSync, listSubjects, upsertCardFromRemote } from '@/db/queries';
-import type { Card, Subject } from '@/types';
+import {
+  ensureBookExists,
+  ensureSubjectExists,
+  getAllBooksForSync,
+  getAllCardsForSync,
+  listSubjects,
+  upsertCardFromRemote,
+} from '@/db/queries';
+import type { Book, Card, Subject } from '@/types';
 
-const FORMAT_VERSION = 1;
+const FORMAT_VERSION = 2;
 
 interface BackupFile {
   app: 'yodda';
   formatVersion: number;
   exportedAt: string;
+  books: Book[];
   subjects: Subject[];
   cards: Card[];
 }
@@ -27,12 +35,13 @@ function timestampForFilename(): string {
  * without any backend of our own.
  */
 export async function exportBackup(db: SQLiteDatabase): Promise<void> {
-  const [subjects, cards] = await Promise.all([listSubjects(db), getAllCardsForSync(db)]);
+  const [books, subjects, cards] = await Promise.all([getAllBooksForSync(db), listSubjects(db), getAllCardsForSync(db)]);
 
   const data: BackupFile = {
     app: 'yodda',
     formatVersion: FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
+    books,
     subjects,
     cards,
   };
@@ -50,6 +59,7 @@ export async function exportBackup(db: SQLiteDatabase): Promise<void> {
 }
 
 export interface ImportResult {
+  books: number;
   subjects: number;
   cards: number;
 }
@@ -77,12 +87,15 @@ export async function importBackup(db: SQLiteDatabase): Promise<ImportResult | n
     throw new Error('not-a-yodda-backup');
   }
 
+  for (const book of data.books ?? []) {
+    await ensureBookExists(db, book);
+  }
   for (const subject of data.subjects) {
-    await ensureSubjectExists(db, subject);
+    await ensureSubjectExists(db, subject.bookId ? subject : { ...subject, bookId: 'general-book' });
   }
   for (const card of data.cards) {
     await upsertCardFromRemote(db, card);
   }
 
-  return { subjects: data.subjects.length, cards: data.cards.length };
+  return { books: data.books?.length ?? 0, subjects: data.subjects.length, cards: data.cards.length };
 }

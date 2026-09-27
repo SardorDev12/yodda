@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'yodda.db';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 export async function migrateDatabase(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -11,8 +11,16 @@ export async function migrateDatabase(db: SQLiteDatabase) {
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
 
+    CREATE TABLE IF NOT EXISTS books (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS subjects (
       id TEXT PRIMARY KEY NOT NULL,
+      book_id TEXT NOT NULL DEFAULT 'general-book' REFERENCES books(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -52,12 +60,36 @@ export async function migrateDatabase(db: SQLiteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_reviews_card_id ON reviews(card_id);
   `);
 
-  const existing = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM subjects');
-  if (!existing || existing.count === 0) {
-    const now = new Date().toISOString();
+  // Pre-existing databases (schema v2 and earlier) already have a
+  // `subjects` table from before the `book_id` column existed — the
+  // CREATE TABLE IF NOT EXISTS above is a no-op for them, so add it here.
+  const subjectColumns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(subjects)');
+  if (!subjectColumns.some((c) => c.name === 'book_id')) {
+    await db.execAsync(
+      "ALTER TABLE subjects ADD COLUMN book_id TEXT NOT NULL DEFAULT 'general-book' REFERENCES books(id) ON DELETE CASCADE"
+    );
+  }
+  await db.execAsync('CREATE INDEX IF NOT EXISTS idx_subjects_book_id ON subjects(book_id)');
+
+  const now = new Date().toISOString();
+
+  const existingBook = await db.getFirstAsync<{ id: string }>("SELECT id FROM books WHERE id = 'general-book'");
+  if (!existingBook) {
     await db.runAsync(
-      'INSERT INTO subjects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO books (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+      'general-book',
+      'General',
+      now,
+      now
+    );
+  }
+
+  const existingSubject = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM subjects');
+  if (!existingSubject || existingSubject.count === 0) {
+    await db.runAsync(
+      'INSERT INTO subjects (id, book_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       'general',
+      'general-book',
       'General',
       now,
       now

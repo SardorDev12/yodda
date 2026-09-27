@@ -1,86 +1,85 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createBook, listBooks } from '@/db/queries';
+import { createSubject, listSubjects } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
-import type { BookWithCounts } from '@/types';
+import type { SubjectWithCounts } from '@/types';
 
-export default function LibraryScreen() {
+export default function BookDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [books, setBooks] = useState<BookWithCounts[]>([]);
-  const [addingBook, setAddingBook] = useState(false);
-  const [newBookName, setNewBookName] = useState('');
+  const [units, setUnits] = useState<SubjectWithCounts[]>([]);
+  const [addingUnit, setAddingUnit] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
 
-  const loadBooks = useCallback(() => {
-    listBooks(db).then(setBooks);
-  }, [db]);
+  const loadUnits = useCallback(() => {
+    if (id) listSubjects(db, id).then(setUnits);
+  }, [db, id]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      listBooks(db).then((list) => {
-        if (active) setBooks(list);
-      });
+      if (id) listSubjects(db, id).then((list) => active && setUnits(list));
       return () => {
         active = false;
       };
-    }, [db])
+    }, [db, id])
   );
 
-  async function handleCreateBook() {
-    const name = newBookName.trim();
-    if (!name) return;
-    await createBook(db, name);
-    setNewBookName('');
-    setAddingBook(false);
-    loadBooks();
+  async function handleCreateUnit() {
+    const name = newUnitName.trim();
+    if (!name || !id) return;
+    await createSubject(db, id, name);
+    setNewUnitName('');
+    setAddingUnit(false);
+    loadUnits();
   }
 
   return (
     <View style={styles.root}>
       <FlatList
-        data={books}
-        keyExtractor={(b) => b.id}
+        data={units}
+        keyExtractor={(s) => s.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
         ListHeaderComponent={
-          addingBook ? (
-            <View style={styles.newBookRow}>
+          addingUnit ? (
+            <View style={styles.newUnitRow}>
               <TextInput
-                style={styles.newBookInput}
-                placeholder={t('library.bookNamePlaceholder')}
+                style={styles.newUnitInput}
+                placeholder={t('book.unitNamePlaceholder')}
                 placeholderTextColor={colors.muted}
-                value={newBookName}
-                onChangeText={setNewBookName}
+                value={newUnitName}
+                onChangeText={setNewUnitName}
                 autoFocus
-                onSubmitEditing={handleCreateBook}
+                onSubmitEditing={handleCreateUnit}
               />
-              <Pressable style={styles.newBookSave} onPress={handleCreateBook}>
-                <Text style={styles.newBookSaveText}>{t('add.add')}</Text>
+              <Pressable style={styles.newUnitSave} onPress={handleCreateUnit}>
+                <Text style={styles.newUnitSaveText}>{t('add.add')}</Text>
               </Pressable>
             </View>
           ) : (
-            <Pressable style={styles.addBookButton} onPress={() => setAddingBook(true)}>
+            <Pressable style={styles.addUnitButton} onPress={() => setAddingUnit(true)}>
               <Ionicons name="add" size={18} color={colors.primary} />
-              <Text style={styles.addBookButtonText}>{t('library.newBook')}</Text>
+              <Text style={styles.addUnitButtonText}>{t('book.newUnit')}</Text>
             </Pressable>
           )
         }
-        ListEmptyComponent={<Text style={styles.empty}>{t('library.empty')}</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('book.empty')}</Text>}
         renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => router.push(`/book/${item.id}`)}>
+          <Pressable style={styles.row} onPress={() => router.push(`/subject/${item.id}`)}>
             <View>
               <Text style={styles.rowTitle}>{item.name}</Text>
               <Text style={styles.rowSubtitle}>
-                {t('library.unitCount', { count: item.unitCount })} · {t('library.cardCount', { count: item.totalCards })}
+                {t('library.cardCount', { count: item.totalCards })} · {t('library.newCount', { count: item.newCards })}
               </Text>
             </View>
             <View style={styles.rowRight}>
@@ -103,7 +102,7 @@ function makeStyles(colors: ThemeColors) {
     root: { flex: 1, backgroundColor: colors.bg },
     list: { padding: spacing(2.5), gap: spacing(1.5) },
     empty: { color: colors.muted, textAlign: 'center', marginTop: spacing(4) },
-    addBookButton: {
+    addUnitButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -114,9 +113,9 @@ function makeStyles(colors: ThemeColors) {
       borderStyle: 'dashed',
       paddingVertical: spacing(1.5),
     },
-    addBookButtonText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-    newBookRow: { flexDirection: 'row', gap: spacing(1) },
-    newBookInput: {
+    addUnitButtonText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+    newUnitRow: { flexDirection: 'row', gap: spacing(1) },
+    newUnitInput: {
       flex: 1,
       backgroundColor: colors.card,
       borderRadius: radius.md,
@@ -125,13 +124,13 @@ function makeStyles(colors: ThemeColors) {
       padding: spacing(1.5),
       color: colors.text,
     },
-    newBookSave: {
+    newUnitSave: {
       backgroundColor: colors.primary,
       borderRadius: radius.md,
       paddingHorizontal: spacing(2),
       justifyContent: 'center',
     },
-    newBookSaveText: { color: '#fff', fontWeight: '700' },
+    newUnitSaveText: { color: '#fff', fontWeight: '700' },
     row: {
       flexDirection: 'row',
       justifyContent: 'space-between',

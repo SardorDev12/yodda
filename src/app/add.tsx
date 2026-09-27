@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createCard, createSubject, listSubjects } from '@/db/queries';
+import { createBook, createCard, createSubject, listBooks, listSubjects } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
-import type { SubjectWithCounts } from '@/types';
+import type { BookWithCounts, SubjectWithCounts } from '@/types';
 
 export default function AddScreen() {
   const db = useSQLiteContext();
@@ -16,25 +16,49 @@ export default function AddScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  const [books, setBooks] = useState<BookWithCounts[]>([]);
+  const [bookId, setBookId] = useState<string | null>(null);
+  const [newBookName, setNewBookName] = useState('');
+  const [addingBook, setAddingBook] = useState(false);
+
   const [subjects, setSubjects] = useState<SubjectWithCounts[]>([]);
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [addingSubject, setAddingSubject] = useState(false);
+
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    listSubjects(db).then((list) => {
-      setSubjects(list);
-      if (list.length > 0) setSubjectId(list[0].id);
+    listBooks(db).then((list) => {
+      setBooks(list);
+      if (list.length > 0) setBookId(list[0].id);
     });
   }, [db]);
 
+  useEffect(() => {
+    if (!bookId) return;
+    listSubjects(db, bookId).then((list) => {
+      setSubjects(list);
+      setSubjectId(list.length > 0 ? list[0].id : null);
+    });
+  }, [db, bookId]);
+
+  async function handleCreateBook() {
+    const name = newBookName.trim();
+    if (!name) return;
+    const book = await createBook(db, name);
+    setBooks((prev) => [...prev, { ...book, unitCount: 0, totalCards: 0, dueToday: 0 }]);
+    setBookId(book.id);
+    setNewBookName('');
+    setAddingBook(false);
+  }
+
   async function handleCreateSubject() {
     const name = newSubjectName.trim();
-    if (!name) return;
-    const subject = await createSubject(db, name);
+    if (!name || !bookId) return;
+    const subject = await createSubject(db, bookId, name);
     setSubjects((prev) => [...prev, { ...subject, totalCards: 0, dueToday: 0, newCards: 0 }]);
     setSubjectId(subject.id);
     setNewSubjectName('');
@@ -62,6 +86,72 @@ export default function AddScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
         keyboardShouldPersistTaps="handled"
       >
+        <Text style={styles.label}>{t('add.book')}</Text>
+        <View style={styles.chipRow}>
+          {books.map((b) => (
+            <Pressable
+              key={b.id}
+              style={[styles.chip, bookId === b.id && styles.chipActive]}
+              onPress={() => setBookId(b.id)}
+            >
+              <Text style={[styles.chipText, bookId === b.id && styles.chipTextActive]}>{b.name}</Text>
+            </Pressable>
+          ))}
+          <Pressable style={styles.chipAdd} onPress={() => setAddingBook((v) => !v)}>
+            <Text style={styles.chipAddText}>{t('add.newBook')}</Text>
+          </Pressable>
+        </View>
+
+        {addingBook && (
+          <View style={styles.newRow}>
+            <TextInput
+              style={styles.newInput}
+              placeholder={t('add.bookNamePlaceholder')}
+              placeholderTextColor={colors.muted}
+              value={newBookName}
+              onChangeText={setNewBookName}
+              autoFocus
+              onSubmitEditing={handleCreateBook}
+            />
+            <Pressable style={styles.newSave} onPress={handleCreateBook}>
+              <Text style={styles.newSaveText}>{t('add.add')}</Text>
+            </Pressable>
+          </View>
+        )}
+
+        <Text style={styles.label}>{t('add.subject')}</Text>
+        <View style={styles.chipRow}>
+          {subjects.map((s) => (
+            <Pressable
+              key={s.id}
+              style={[styles.chip, subjectId === s.id && styles.chipActive]}
+              onPress={() => setSubjectId(s.id)}
+            >
+              <Text style={[styles.chipText, subjectId === s.id && styles.chipTextActive]}>{s.name}</Text>
+            </Pressable>
+          ))}
+          <Pressable style={styles.chipAdd} onPress={() => setAddingSubject((v) => !v)} disabled={!bookId}>
+            <Text style={styles.chipAddText}>{t('add.newSubject')}</Text>
+          </Pressable>
+        </View>
+
+        {addingSubject && (
+          <View style={styles.newRow}>
+            <TextInput
+              style={styles.newInput}
+              placeholder={t('add.subjectNamePlaceholder')}
+              placeholderTextColor={colors.muted}
+              value={newSubjectName}
+              onChangeText={setNewSubjectName}
+              autoFocus
+              onSubmitEditing={handleCreateSubject}
+            />
+            <Pressable style={styles.newSave} onPress={handleCreateSubject}>
+              <Text style={styles.newSaveText}>{t('add.add')}</Text>
+            </Pressable>
+          </View>
+        )}
+
         <Text style={styles.label}>{t('add.question')}</Text>
         <TextInput
           style={styles.input}
@@ -81,39 +171,6 @@ export default function AddScreen() {
           onChangeText={setAnswer}
           multiline
         />
-
-        <Text style={styles.label}>{t('add.subject')}</Text>
-        <View style={styles.subjectRow}>
-          {subjects.map((s) => (
-            <Pressable
-              key={s.id}
-              style={[styles.subjectChip, subjectId === s.id && styles.subjectChipActive]}
-              onPress={() => setSubjectId(s.id)}
-            >
-              <Text style={[styles.subjectChipText, subjectId === s.id && styles.subjectChipTextActive]}>{s.name}</Text>
-            </Pressable>
-          ))}
-          <Pressable style={styles.subjectChipAdd} onPress={() => setAddingSubject((v) => !v)}>
-            <Text style={styles.subjectChipAddText}>{t('add.newSubject')}</Text>
-          </Pressable>
-        </View>
-
-        {addingSubject && (
-          <View style={styles.newSubjectRow}>
-            <TextInput
-              style={styles.newSubjectInput}
-              placeholder={t('add.subjectNamePlaceholder')}
-              placeholderTextColor={colors.muted}
-              value={newSubjectName}
-              onChangeText={setNewSubjectName}
-              autoFocus
-              onSubmitEditing={handleCreateSubject}
-            />
-            <Pressable style={styles.newSubjectSave} onPress={handleCreateSubject}>
-              <Text style={styles.newSubjectSaveText}>{t('add.add')}</Text>
-            </Pressable>
-          </View>
-        )}
 
         <Pressable style={[styles.saveButton, !canSave && styles.saveButtonDisabled]} disabled={!canSave || saving} onPress={handleSave}>
           <Text style={styles.saveButtonText}>{saving ? t('add.saving') : t('add.save')}</Text>
@@ -139,8 +196,8 @@ function makeStyles(colors: ThemeColors) {
       marginTop: spacing(1),
     },
     inputTall: { minHeight: 96, textAlignVertical: 'top' },
-    subjectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1), marginTop: spacing(1) },
-    subjectChip: {
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1), marginTop: spacing(1) },
+    chip: {
       paddingHorizontal: spacing(1.5),
       paddingVertical: spacing(1),
       borderRadius: 999,
@@ -148,10 +205,10 @@ function makeStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    subjectChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    subjectChipText: { color: colors.text, fontWeight: '600' },
-    subjectChipTextActive: { color: '#fff' },
-    subjectChipAdd: {
+    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { color: colors.text, fontWeight: '600' },
+    chipTextActive: { color: '#fff' },
+    chipAdd: {
       paddingHorizontal: spacing(1.5),
       paddingVertical: spacing(1),
       borderRadius: 999,
@@ -159,9 +216,9 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.primary,
       borderStyle: 'dashed',
     },
-    subjectChipAddText: { color: colors.primary, fontWeight: '600' },
-    newSubjectRow: { flexDirection: 'row', gap: spacing(1), marginTop: spacing(1) },
-    newSubjectInput: {
+    chipAddText: { color: colors.primary, fontWeight: '600' },
+    newRow: { flexDirection: 'row', gap: spacing(1), marginTop: spacing(1) },
+    newInput: {
       flex: 1,
       backgroundColor: colors.card,
       borderRadius: radius.md,
@@ -170,13 +227,13 @@ function makeStyles(colors: ThemeColors) {
       padding: spacing(1.5),
       color: colors.text,
     },
-    newSubjectSave: {
+    newSave: {
       backgroundColor: colors.primary,
       borderRadius: radius.md,
       paddingHorizontal: spacing(2),
       justifyContent: 'center',
     },
-    newSubjectSaveText: { color: '#fff', fontWeight: '700' },
+    newSaveText: { color: '#fff', fontWeight: '700' },
     saveButton: {
       marginTop: spacing(3),
       backgroundColor: colors.primary,
