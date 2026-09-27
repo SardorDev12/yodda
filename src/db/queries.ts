@@ -269,6 +269,35 @@ export async function ensureSubjectExists(db: SQLiteDatabase, subject: Subject):
   );
 }
 
+const IMPORTED_PACKS_KEY = 'importedPacks';
+
+export async function getImportedPackIds(db: SQLiteDatabase): Promise<string[]> {
+  const raw = await getSetting(db, IMPORTED_PACKS_KEY);
+  return raw ? (JSON.parse(raw) as string[]) : [];
+}
+
+/**
+ * Copies a bundled vocab pack into the user's own subjects/cards, then
+ * marks it imported so it can't be imported twice. After this the cards
+ * are ordinary local data — editing or deleting them never touches the
+ * pack definition itself.
+ */
+export async function importPack(
+  db: SQLiteDatabase,
+  pack: { id: string; title: string; theme: string; words: { word: string; definition: string; example?: string }[] }
+): Promise<void> {
+  const imported = await getImportedPackIds(db);
+  if (imported.includes(pack.id)) return;
+
+  const subject = await createSubject(db, `${pack.title} — ${pack.theme}`);
+  for (const w of pack.words) {
+    const answer = w.example ? `${w.definition}\n\n${w.example}` : w.definition;
+    await createCard(db, { subjectId: subject.id, question: w.word, answer });
+  }
+
+  await setSetting(db, IMPORTED_PACKS_KEY, JSON.stringify([...imported, pack.id]));
+}
+
 export async function getSetting(db: SQLiteDatabase, key: string): Promise<string | null> {
   const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key);
   return row?.value ?? null;
