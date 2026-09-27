@@ -36,11 +36,6 @@ export default function LibraryScreen() {
         data={subjects}
         keyExtractor={(s) => s.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
-        ListHeaderComponent={
-          <Pressable style={styles.packsLink} onPress={() => router.push('/packs')}>
-            <Text style={styles.packsLinkText}>{t('library.browsePacks')}</Text>
-          </Pressable>
-        }
         ListEmptyComponent={<Text style={styles.empty}>{t('library.empty')}</Text>}
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => router.push(`/subject/${item.id}`)}>
@@ -70,13 +65,6 @@ function makeStyles(colors: ThemeColors) {
     root: { flex: 1, backgroundColor: colors.bg },
     list: { padding: spacing(2.5), gap: spacing(1.5) },
     empty: { color: colors.muted, textAlign: 'center', marginTop: spacing(4) },
-    packsLink: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: radius.md,
-      padding: spacing(1.5),
-      alignItems: 'center',
-    },
-    packsLinkText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
     row: {
       flexDirection: 'row',
       justifyContent: 'space-between',

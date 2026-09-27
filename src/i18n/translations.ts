@@ -56,15 +56,6 @@ export const en = {
   'library.cardCount_one': '{count} card',
   'library.cardCount_other': '{count} cards',
   'library.newCount': '{count} new',
-  'library.browsePacks': 'Browse ready-made word packs →',
-
-  'packs.title': 'Word packs',
-  'packs.subtitle': 'Ready-made vocabulary you can download and edit freely.',
-  'packs.wordCount_one': '{count} word',
-  'packs.wordCount_other': '{count} words',
-  'packs.download': 'Download',
-  'packs.downloading': 'Downloading…',
-  'packs.downloaded': 'Downloaded',
 
   'subject.title': 'Subject',
   'subject.empty': 'No cards in this subject yet.',
@@ -191,15 +182,6 @@ export const ru: Record<TranslationKey, string> = {
   'library.cardCount_one': '{count} карточка',
   'library.cardCount_other': '{count} карточек',
   'library.newCount': '{count} новых',
-  'library.browsePacks': 'Готовые наборы слов →',
-
-  'packs.title': 'Наборы слов',
-  'packs.subtitle': 'Готовые словарные наборы — скачивайте и редактируйте как угодно.',
-  'packs.wordCount_one': '{count} слово',
-  'packs.wordCount_other': '{count} слов',
-  'packs.download': 'Скачать',
-  'packs.downloading': 'Скачивается…',
-  'packs.downloaded': 'Скачано',
 
   'subject.title': 'Тема',
   'subject.empty': 'В этой теме пока нет карточек.',
@@ -323,15 +305,6 @@ export const uz: Record<TranslationKey, string> = {
   'library.cardCount_one': '{count} ta kartochka',
   'library.cardCount_other': '{count} ta kartochka',
   'library.newCount': '{count} ta yangi',
-  'library.browsePacks': "Tayyor so'z paketlarini ko'rish →",
-
-  'packs.title': "So'z paketlari",
-  'packs.subtitle': "Tayyor lug'at paketlari — yuklab oling va erkin tahrirlang.",
-  'packs.wordCount_one': "{count} ta so'z",
-  'packs.wordCount_other': "{count} ta so'z",
-  'packs.download': 'Yuklab olish',
-  'packs.downloading': 'Yuklanmoqda…',
-  'packs.downloaded': 'Yuklab olindi',
 
   'subject.title': 'Mavzu',
   'subject.empty': "Bu mavzuda hali kartochka yo'q.",
