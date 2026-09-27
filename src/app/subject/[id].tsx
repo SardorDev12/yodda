@@ -52,13 +52,13 @@ export default function SubjectDetailScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable style={styles.card} onPress={() => router.push(`/edit-card?id=${item.id}`)}>
             <Text style={styles.question}>{item.question}</Text>
             <Text style={styles.answer} numberOfLines={2}>
               {item.answer}
             </Text>
             <Text style={styles.status}>{STATUS_LABEL[item.status]}</Text>
-          </View>
+          </Pressable>
         )}
       />
     </View>

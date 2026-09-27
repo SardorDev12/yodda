@@ -35,6 +35,7 @@ function Navigator() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="review" options={{ presentation: 'fullScreenModal', headerShown: false }} />
         <Stack.Screen name="add" options={{ presentation: 'modal', title: t('add.title') }} />
+        <Stack.Screen name="edit-card" options={{ presentation: 'modal', title: t('edit.title') }} />
         <Stack.Screen name="about" options={{ presentation: 'modal', title: t('about.title') }} />
         <Stack.Screen name="packs" options={{ presentation: 'modal', title: t('packs.title') }} />
         <Stack.Screen name="subject/[id]" options={{ title: t('subject.title') }} />

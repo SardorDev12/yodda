@@ -43,6 +43,14 @@ export const en = {
   'add.questionPlaceholder': 'What is encapsulation?',
   'add.answerPlaceholder': 'Bundling data and methods while controlling access to internal state.',
 
+  'edit.title': 'Edit card',
+  'edit.save': 'Save',
+  'edit.saving': 'Saving…',
+  'edit.delete': 'Delete card',
+  'edit.deleteConfirmTitle': 'Delete this card?',
+  'edit.deleteConfirmBody': 'This can’t be undone.',
+  'edit.cancel': 'Cancel',
+
   'library.title': 'Library',
   'library.empty': 'No knowledge yet. Add your first item from Home.',
   'library.cardCount_one': '{count} card',
@@ -170,6 +178,14 @@ export const ru: Record<TranslationKey, string> = {
   'add.questionPlaceholder': 'Что такое инкапсуляция?',
   'add.answerPlaceholder': 'Объединение данных и методов с ограничением доступа к внутреннему состоянию.',
 
+  'edit.title': 'Редактировать карточку',
+  'edit.save': 'Сохранить',
+  'edit.saving': 'Сохранение…',
+  'edit.delete': 'Удалить карточку',
+  'edit.deleteConfirmTitle': 'Удалить эту карточку?',
+  'edit.deleteConfirmBody': 'Это действие нельзя отменить.',
+  'edit.cancel': 'Отмена',
+
   'library.title': 'Библиотека',
   'library.empty': 'Пока нет карточек. Добавьте первую с главного экрана.',
   'library.cardCount_one': '{count} карточка',
@@ -293,6 +309,14 @@ export const uz: Record<TranslationKey, string> = {
   'add.saving': 'Saqlanmoqda…',
   'add.questionPlaceholder': 'Inkapsulyatsiya nima?',
   'add.answerPlaceholder': "Ma'lumot va metodlarni birlashtirib, ichki holatga kirishni cheklash.",
+
+  'edit.title': "Kartochkani tahrirlash",
+  'edit.save': 'Saqlash',
+  'edit.saving': 'Saqlanmoqda…',
+  'edit.delete': "Kartochkani o'chirish",
+  'edit.deleteConfirmTitle': "Bu kartochka o'chirilsinmi?",
+  'edit.deleteConfirmBody': "Bu amalni bekor qilib bo'lmaydi.",
+  'edit.cancel': 'Bekor qilish',
 
   'library.title': 'Kutubxona',
   'library.empty': "Hali bilim yo'q. Bosh sahifadan birinchisini qo'shing.",

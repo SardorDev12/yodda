@@ -212,6 +212,25 @@ export async function deleteCard(db: SQLiteDatabase, cardId: string): Promise<vo
   await db.runAsync('UPDATE cards SET deleted = 1, updated_at = ? WHERE id = ?', new Date().toISOString(), cardId);
 }
 
+export async function getCard(db: SQLiteDatabase, cardId: string): Promise<Card | null> {
+  const row = await db.getFirstAsync<any>('SELECT * FROM cards WHERE id = ?', cardId);
+  return row ? rowToCard(row) : null;
+}
+
+export async function updateCard(
+  db: SQLiteDatabase,
+  cardId: string,
+  input: { question: string; answer: string }
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE cards SET question = ?, answer = ?, updated_at = ? WHERE id = ?',
+    input.question.trim(),
+    input.answer.trim(),
+    new Date().toISOString(),
+    cardId
+  );
+}
+
 export async function getAllCardsForSync(db: SQLiteDatabase): Promise<Card[]> {
   const rows = await db.getAllAsync<any>('SELECT * FROM cards ORDER BY updated_at ASC');
   return rows.map(rowToCard);
