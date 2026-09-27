@@ -1,10 +1,9 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { RowMenu } from '@/components/RowMenu';
 import { deleteCard, getCard, updateCard } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
@@ -61,13 +60,6 @@ export default function EditCardScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <RowMenu items={[{ label: t('edit.delete'), destructive: true, onPress: handleDelete }]} />
-          ),
-        }}
-      />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
         keyboardShouldPersistTaps="handled"
@@ -89,6 +81,10 @@ export default function EditCardScreen() {
           onChangeText={setAnswer}
           multiline
         />
+
+        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>{t('edit.delete')}</Text>
+        </Pressable>
 
         <Pressable style={[styles.saveButton, !canSave && styles.saveButtonDisabled]} disabled={!canSave || saving} onPress={handleSave}>
           <Text style={styles.saveButtonText}>{saving ? t('edit.saving') : t('edit.save')}</Text>
@@ -123,5 +119,12 @@ function makeStyles(colors: ThemeColors) {
     },
     saveButtonDisabled: { backgroundColor: colors.border },
     saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+    deleteButton: {
+      marginTop: spacing(3),
+      paddingVertical: spacing(1.5),
+      borderRadius: radius.md,
+      alignItems: 'center',
+    },
+    deleteButtonText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
   });
 }
