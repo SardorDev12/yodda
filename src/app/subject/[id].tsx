@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -16,10 +16,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
-import { createCard, deleteCard, listCardsBySubject } from '@/db/queries';
+import { createCard, deleteCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
-import type { Card, CardStatus } from '@/types';
+import type { Card, CardStatus, Subject } from '@/types';
 
 export default function SubjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +34,7 @@ export default function SubjectDetailScreen() {
     review: t('status.review'),
     mature: t('status.mature'),
   };
+  const [subject, setSubject] = useState<Subject | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
   const [addingCard, setAddingCard] = useState(false);
   const [question, setQuestion] = useState('');
@@ -47,7 +48,10 @@ export default function SubjectDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      if (id) listCardsBySubject(db, id).then((list) => active && setCards(list));
+      if (id) {
+        getSubject(db, id).then((s) => active && setSubject(s));
+        listCardsBySubject(db, id).then((list) => active && setCards(list));
+      }
       return () => {
         active = false;
       };
@@ -68,6 +72,21 @@ export default function SubjectDetailScreen() {
     }
   }
 
+  function handleDeleteUnit() {
+    if (!id) return;
+    Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
+      { text: t('edit.cancel'), style: 'cancel' },
+      {
+        text: t('book.deleteUnit'),
+        style: 'destructive',
+        onPress: async () => {
+          await deleteSubject(db, id);
+          router.back();
+        },
+      },
+    ]);
+  }
+
   function handleDeleteCard(cardId: string) {
     Alert.alert(t('edit.deleteConfirmTitle'), t('edit.deleteConfirmBody'), [
       { text: t('edit.cancel'), style: 'cancel' },
@@ -84,6 +103,14 @@ export default function SubjectDetailScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Stack.Screen
+        options={{
+          title: subject?.name ?? t('subject.title'),
+          headerRight: () => (
+            <RowMenu items={[{ label: t('book.deleteUnit'), destructive: true, onPress: handleDeleteUnit }]} />
+          ),
+        }}
+      />
       <FlatList
         data={cards}
         keyExtractor={(c) => c.id}

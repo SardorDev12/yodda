@@ -134,6 +134,11 @@ export async function createSubject(db: SQLiteDatabase, bookId: string, name: st
   return { id, bookId, name: name.trim(), createdAt: now, updatedAt: now };
 }
 
+export async function getSubject(db: SQLiteDatabase, subjectId: string): Promise<Subject | null> {
+  const row = await db.getFirstAsync<any>('SELECT * FROM subjects WHERE id = ?', subjectId);
+  return row ? { id: row.id, bookId: row.book_id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at } : null;
+}
+
 export async function deleteSubject(db: SQLiteDatabase, subjectId: string): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM cards WHERE subject_id = ?', subjectId);

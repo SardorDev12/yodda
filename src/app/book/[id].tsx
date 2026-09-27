@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
-import { createSubject, deleteSubject, listSubjects } from '@/db/queries';
+import { createSubject, deleteBook, getBook, listSubjects } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
-import type { SubjectWithCounts } from '@/types';
+import type { Book, SubjectWithCounts } from '@/types';
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,6 +18,7 @@ export default function BookDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [book, setBook] = useState<Book | null>(null);
   const [units, setUnits] = useState<SubjectWithCounts[]>([]);
   const [addingUnit, setAddingUnit] = useState(false);
   const [newUnitName, setNewUnitName] = useState('');
@@ -29,7 +30,10 @@ export default function BookDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      if (id) listSubjects(db, id).then((list) => active && setUnits(list));
+      if (id) {
+        getBook(db, id).then((b) => active && setBook(b));
+        listSubjects(db, id).then((list) => active && setUnits(list));
+      }
       return () => {
         active = false;
       };
@@ -45,15 +49,16 @@ export default function BookDetailScreen() {
     loadUnits();
   }
 
-  function handleDeleteUnit(unitId: string) {
-    Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
+  function handleDeleteBook() {
+    if (!id) return;
+    Alert.alert(t('library.deleteBookConfirmTitle'), t('library.deleteBookConfirmBody'), [
       { text: t('edit.cancel'), style: 'cancel' },
       {
-        text: t('book.deleteUnit'),
+        text: t('library.deleteBook'),
         style: 'destructive',
         onPress: async () => {
-          await deleteSubject(db, unitId);
-          loadUnits();
+          await deleteBook(db, id);
+          router.back();
         },
       },
     ]);
@@ -61,6 +66,14 @@ export default function BookDetailScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Stack.Screen
+        options={{
+          title: book?.name ?? t('book.title'),
+          headerRight: () => (
+            <RowMenu items={[{ label: t('library.deleteBook'), destructive: true, onPress: handleDeleteBook }]} />
+          ),
+        }}
+      />
       <FlatList
         data={units}
         keyExtractor={(s) => s.id}
@@ -111,7 +124,6 @@ export default function BookDetailScreen() {
                   <Text style={styles.badgeText}>{item.dueToday}</Text>
                 </View>
               )}
-              <RowMenu items={[{ label: t('book.deleteUnit'), destructive: true, onPress: () => handleDeleteUnit(item.id) }]} />
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </View>
           </Pressable>
