@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
-import { createCard, deleteCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
+import { createCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, CardStatus, Subject } from '@/types';
@@ -82,20 +82,6 @@ export default function SubjectDetailScreen() {
         onPress: async () => {
           await deleteSubject(db, id);
           router.back();
-        },
-      },
-    ]);
-  }
-
-  function handleDeleteCard(cardId: string) {
-    Alert.alert(t('edit.deleteConfirmTitle'), t('edit.deleteConfirmBody'), [
-      { text: t('edit.cancel'), style: 'cancel' },
-      {
-        text: t('edit.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          await deleteCard(db, cardId);
-          loadCards();
         },
       },
     ]);
@@ -169,10 +155,7 @@ export default function SubjectDetailScreen() {
         }
         renderItem={({ item }) => (
           <Pressable style={styles.card} onPress={() => router.push(`/edit-card?id=${item.id}`)}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.question}>{item.question}</Text>
-              <RowMenu items={[{ label: t('edit.delete'), destructive: true, onPress: () => handleDeleteCard(item.id) }]} />
-            </View>
+            <Text style={styles.question}>{item.question}</Text>
             <Text style={styles.answer} numberOfLines={2}>
               {item.answer}
             </Text>
@@ -196,8 +179,7 @@ function makeStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing(1) },
-    question: { fontSize: 15, fontWeight: '600', color: colors.text, flex: 1 },
+    question: { fontSize: 15, fontWeight: '600', color: colors.text },
     answer: { fontSize: 13, color: colors.muted, marginTop: 4 },
     status: {
       fontSize: 11,

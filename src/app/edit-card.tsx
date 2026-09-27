@@ -1,10 +1,11 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getCard, updateCard } from '@/db/queries';
+import { RowMenu } from '@/components/RowMenu';
+import { deleteCard, getCard, updateCard } from '@/db/queries';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 
@@ -41,10 +42,32 @@ export default function EditCardScreen() {
     }
   }
 
+  function handleDelete() {
+    if (!id) return;
+    Alert.alert(t('edit.deleteConfirmTitle'), t('edit.deleteConfirmBody'), [
+      { text: t('edit.cancel'), style: 'cancel' },
+      {
+        text: t('edit.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          await deleteCard(db, id);
+          router.back();
+        },
+      },
+    ]);
+  }
+
   const canSave = question.trim().length > 0 && answer.trim().length > 0;
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <RowMenu items={[{ label: t('edit.delete'), destructive: true, onPress: handleDelete }]} />
+          ),
+        }}
+      />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(4) }]}
         keyboardShouldPersistTaps="handled"
