@@ -10,10 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.yodda.mobile"
+      "bundleIdentifier": "uz.yodda.app"
     },
     "android": {
-      "package": "app.yodda.mobile",
+      "package": "uz.yodda.app",
       "icon": "./assets/icon.png",
       "backgroundColor": "#FAFAFC",
       "predictiveBackGestureEnabled": false
