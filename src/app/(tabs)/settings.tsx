@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSQLiteContext } from 'expo-sqlite';
-import * as Updates from 'expo-updates';
 
 import { getSetting, setSetting } from '@/db/queries';
 import { LANGUAGES, type Language } from '@/i18n';
@@ -38,7 +37,6 @@ export default function SettingsScreen() {
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   useEffect(() => {
     Promise.all([getSetting(db, 'notifOn'), getSetting(db, 'notifCount'), getSetting(db, 'notifHours')]).then(
@@ -108,26 +106,6 @@ export default function SettingsScreen() {
       Alert.alert(t('settings.importButton'), t('settings.importError'));
     } finally {
       setImporting(false);
-    }
-  }
-
-  async function handleCheckForUpdates() {
-    setCheckingUpdate(true);
-    try {
-      const result = await Updates.checkForUpdateAsync();
-      if (result.isAvailable) {
-        await Updates.fetchUpdateAsync();
-        Alert.alert(t('settings.updateReadyTitle'), t('settings.updateReadyBody'), [
-          { text: t('edit.cancel'), style: 'cancel' },
-          { text: t('settings.restartNow'), onPress: () => Updates.reloadAsync() },
-        ]);
-      } else {
-        Alert.alert(t('settings.checkForUpdates'), t('settings.upToDate'));
-      }
-    } catch {
-      Alert.alert(t('settings.checkForUpdates'), t('settings.updateError'));
-    } finally {
-      setCheckingUpdate(false);
     }
   }
 
@@ -242,17 +220,6 @@ export default function SettingsScreen() {
           </View>
         )}
       </View>
-
-      {!isWeb && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.updates')}</Text>
-          <Pressable style={styles.backupButton} onPress={handleCheckForUpdates} disabled={checkingUpdate}>
-            <Text style={styles.backupButtonText}>
-              {checkingUpdate ? t('settings.checkingForUpdates') : t('settings.checkForUpdates')}
-            </Text>
-          </Pressable>
-        </View>
-      )}
 
       <Pressable style={styles.section} onPress={() => router.push('/about')}>
         <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
