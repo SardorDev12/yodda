@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useEffect, type ReactNode } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DATABASE_NAME, migrateDatabase } from '@/db/schema';
@@ -34,11 +34,17 @@ function SyncBootstrap() {
   return null;
 }
 
-/** On web, frames the app in a centered, mobile-width column instead of
- * stretching full-bleed across a wide browser window. No-op on native. */
+const FRAME_BREAKPOINT = 720;
+const FRAME_MAX_WIDTH = 640;
+
+/** On a wide browser window, frames the app in a centered, readable-width
+ * column with a backdrop instead of stretching full-bleed. Below the
+ * breakpoint (phones, narrow windows) it's a no-op — full width, no frame,
+ * so real mobile browsers are never squeezed. No-op on native entirely. */
 function WebFrame({ children }: { children: ReactNode }) {
   const { colors, scheme } = useSettings();
-  if (Platform.OS !== 'web') return <>{children}</>;
+  const { width } = useWindowDimensions();
+  if (Platform.OS !== 'web' || width < FRAME_BREAKPOINT) return <>{children}</>;
   return (
     <View style={[styles.webBackdrop, { backgroundColor: scheme === 'dark' ? '#000003' : '#E4E4EA' }]}>
       <View style={[styles.webFrame, { backgroundColor: colors.bg }]}>{children}</View>
@@ -98,7 +104,7 @@ const styles = StyleSheet.create({
   webFrame: {
     flex: 1,
     width: '100%',
-    maxWidth: 480,
+    maxWidth: FRAME_MAX_WIDTH,
     ...(Platform.OS === 'web' ? ({ boxShadow: '0 0 40px rgba(0, 0, 0, 0.12)' } as object) : null),
   },
 });
