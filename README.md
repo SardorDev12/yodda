@@ -75,6 +75,22 @@ export builds successfully, but if you serve `expo start --web` locally
 and the database fails to open, add those headers via your dev-server or
 hosting config.
 
+### Deploying the web build to GitHub Pages
+
+`app.json`'s `expo.experiments.baseUrl` is set to `/yodda` so the static
+export's asset paths (`/yodda/_expo/...`) resolve correctly when served
+from a repo subpath like `https://<user>.github.io/yodda/`, instead of
+the root-relative paths (`/_expo/...`) Expo emits by default. If you fork
+this repo under a different name, update `baseUrl` to match.
+`public/.nojekyll` is also required — GitHub Pages' Jekyll processing
+otherwise drops the `_expo` directory (leading underscore).
+
+`.github/workflows/gh-pages.yml` builds and publishes `dist/` to GitHub
+Pages automatically on every push to `main` that touches app code (or via
+"Run workflow" on demand). One-time setup: repo **Settings → Pages →
+Source → GitHub Actions**. After that, the site stays in sync with `main`
+with no further manual steps.
+
 ## Scheduler
 
 Every review calls `scheduler.scheduleNextReview()` (`src/scheduler/index.ts`).
