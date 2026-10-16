@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,8 +24,10 @@ export function AuthGate() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   async function handleSubmit() {
+    if (!email.trim() || !password || busy) return;
     setError(null);
     setBusy(true);
     try {
@@ -53,15 +55,21 @@ export function AuthGate() {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
           <View style={styles.passwordRow}>
             <TextInput
+              ref={passwordRef}
               style={styles.passwordInput}
               placeholder={t('auth.password')}
               placeholderTextColor={colors.muted}
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
+              returnKeyType="go"
+              onSubmitEditing={handleSubmit}
             />
             <Pressable
               style={styles.eyeButton}
