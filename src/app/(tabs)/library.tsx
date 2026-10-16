@@ -6,6 +6,8 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createBook, listBooks } from '@/db/queries';
+import { pushAll } from '@/lib/sync';
+import { useAuth } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { BookWithCounts } from '@/types';
@@ -15,6 +17,7 @@ export default function LibraryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
+  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [books, setBooks] = useState<BookWithCounts[]>([]);
   const [addingBook, setAddingBook] = useState(false);
@@ -43,6 +46,7 @@ export default function LibraryScreen() {
     setNewBookName('');
     setAddingBook(false);
     loadBooks();
+    if (user) pushAll(db, user.id).catch(() => {});
   }
 
   return (

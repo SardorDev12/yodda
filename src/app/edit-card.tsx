@@ -5,6 +5,8 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deleteCard, getCard, updateCard } from '@/db/queries';
+import { pushAll } from '@/lib/sync';
+import { useAuth } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 
@@ -14,6 +16,7 @@ export default function EditCardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
+  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [question, setQuestion] = useState('');
@@ -35,6 +38,7 @@ export default function EditCardScreen() {
     setSaving(true);
     try {
       await updateCard(db, id, { question, answer });
+      if (user) pushAll(db, user.id).catch(() => {});
       router.back();
     } finally {
       setSaving(false);
@@ -50,6 +54,7 @@ export default function EditCardScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteCard(db, id);
+          if (user) pushAll(db, user.id).catch(() => {});
           router.back();
         },
       },

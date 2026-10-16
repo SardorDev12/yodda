@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
 import { createSubject, deleteBook, getBook, listSubjects } from '@/db/queries';
+import { pushAll } from '@/lib/sync';
+import { useAuth } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Book, SubjectWithCounts } from '@/types';
@@ -17,6 +19,7 @@ export default function BookDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
+  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [book, setBook] = useState<Book | null>(null);
   const [units, setUnits] = useState<SubjectWithCounts[]>([]);
@@ -47,6 +50,7 @@ export default function BookDetailScreen() {
     setNewUnitName('');
     setAddingUnit(false);
     loadUnits();
+    if (user) pushAll(db, user.id).catch(() => {});
   }
 
   function handleDeleteBook() {
@@ -58,6 +62,7 @@ export default function BookDetailScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteBook(db, id);
+          if (user) pushAll(db, user.id).catch(() => {});
           router.back();
         },
       },
