@@ -100,6 +100,47 @@ needs real credentials to do anything past the sign-in screen. One-time
 setup: repo **Settings → Pages → Source → GitHub Actions**, plus adding
 those two secrets under **Settings → Secrets and variables → Actions**.
 
+### Deploying the web build to Cloudflare Workers
+
+`wrangler.toml` configures this as a Workers Static Assets site (the
+current recommended way to serve a static build from a Worker, replacing
+the older "Workers Sites"): `[assets] directory = "./dist"`, with
+`not_found_handling = "single-page-application"` so direct navigation to
+a dynamic route like `/book/<id>` — which only exists client-side, since
+Expo's static export produces one shell HTML file per *route pattern*,
+not per id — falls back to `index.html` and lets Expo Router's client
+code take over instead of 404ing.
+
+Workers serves from its own `*.workers.dev` subdomain or a custom domain
+at the root, so this build intentionally does **not** set
+`EXPO_WEB_BASE_URL` (unlike the GitHub Pages one, which needs `/yodda`)
+— leaving it unset gives root-relative asset paths, correct here.
+
+One-time setup, all via the Cloudflare dashboard:
+
+1. **Create an API token**: dashboard → click your profile icon (top
+   right) → **My Profile** → **API Tokens** → **Create Token** → use the
+   **Edit Cloudflare Workers** template → scope it to your account →
+   **Continue to summary** → **Create Token**. Copy it immediately (it's
+   shown once).
+2. **Find your Account ID**: dashboard → **Workers & Pages** → it's
+   listed in the right-hand sidebar of that page (or under **Account
+   Home** → copy the Account ID shown there).
+3. **Add both as GitHub repo secrets**: this repo's GitHub page →
+   **Settings → Secrets and variables → Actions → New repository
+   secret** → add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+   with the values from steps 1–2. The `EXPO_PUBLIC_SUPABASE_URL` /
+   `EXPO_PUBLIC_SUPABASE_ANON_KEY` secrets from the GitHub Pages setup
+   above are reused here too, if already added.
+
+After that, `.github/workflows/cloudflare-worker.yml` builds and deploys
+on every push to `main` that touches app code (or via "Run workflow" on
+demand) — no further manual steps. The Worker's URL
+(`https://yodda.<your-subdomain>.workers.dev`, or a custom domain you
+attach to it afterward in **Workers & Pages → yodda → Settings →
+Domains & Routes**) is shown in the Cloudflare dashboard once the first
+deploy completes.
+
 ## Scheduler
 
 Every review calls `scheduler.scheduleNextReview()` (`src/scheduler/index.ts`).
