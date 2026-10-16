@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DEFAULT_LANGUAGE, translate } from '@/i18n';
@@ -20,6 +21,7 @@ export function AuthGate() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -37,41 +39,54 @@ export function AuthGate() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <Text style={styles.title}>{mode === 'signin' ? t('auth.signIn') : t('auth.createAccount')}</Text>
-        <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
+      <KeyboardAvoidingView style={styles.center} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={styles.card}>
+          <Image source={require('../../assets/icon.png')} style={styles.logo} />
+          <Text style={styles.title}>{mode === 'signin' ? t('auth.signIn') : t('auth.createAccount')}</Text>
+          <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder={t('auth.email')}
-          placeholderTextColor={colors.muted}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder={t('auth.password')}
-          placeholderTextColor={colors.muted}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder={t('auth.email')}
+            placeholderTextColor={colors.muted}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder={t('auth.password')}
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Pressable
+              style={styles.eyeButton}
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={8}
+              accessibilityLabel={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+            >
+              <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={colors.muted} />
+            </Pressable>
+          </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+          {error && <Text style={styles.error}>{error}</Text>}
 
-        <Pressable style={styles.button} onPress={handleSubmit} disabled={busy}>
-          {busy ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>{mode === 'signin' ? t('auth.signIn') : t('auth.signUp')}</Text>
-          )}
-        </Pressable>
+          <Pressable style={styles.button} onPress={handleSubmit} disabled={busy}>
+            {busy ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>{mode === 'signin' ? t('auth.signIn') : t('auth.signUp')}</Text>
+            )}
+          </Pressable>
 
-        <Pressable onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
-          <Text style={styles.switchText}>{mode === 'signin' ? t('auth.switchToSignUp') : t('auth.switchToSignIn')}</Text>
-        </Pressable>
+          <Pressable onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
+            <Text style={styles.switchText}>{mode === 'signin' ? t('auth.switchToSignUp') : t('auth.switchToSignIn')}</Text>
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -79,7 +94,9 @@ export function AuthGate() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  form: { flex: 1, justifyContent: 'center', padding: spacing(3), gap: spacing(1.5) },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing(3) },
+  card: { width: '100%', maxWidth: 380, gap: spacing(1.5) },
+  logo: { width: 56, height: 56, borderRadius: radius.md, alignSelf: 'center', marginBottom: spacing(1) },
   title: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
   subtitle: { fontSize: 14, color: colors.muted, marginBottom: spacing(1), textAlign: 'center' },
   input: {
@@ -91,6 +108,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  passwordInput: { flex: 1, padding: spacing(1.5), fontSize: 16, color: colors.text },
+  eyeButton: { paddingHorizontal: spacing(1.5) },
   error: { color: colors.danger, fontSize: 13, textAlign: 'center' },
   button: {
     backgroundColor: colors.primary,
