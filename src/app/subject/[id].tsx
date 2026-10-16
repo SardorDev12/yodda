@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ErrorState, LoadingState } from '@/components/CenterState';
 import { RowMenu } from '@/components/RowMenu';
 import { createCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
@@ -42,23 +43,30 @@ export default function SubjectDetailScreen() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const loadCards = useCallback(() => {
-    if (id) listCardsBySubject(userId, id).then(setCards);
+    if (id) return listCardsBySubject(userId, id).then(setCards);
+  }, [userId, id]);
+
+  const load = useCallback(() => {
+    if (!id) return;
+    setError(false);
+    Promise.all([getSubject(userId, id), listCardsBySubject(userId, id)])
+      .then(([s, list]) => {
+        setSubject(s);
+        setCards(list);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, [userId, id]);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      if (id) {
-        getSubject(userId, id).then((s) => active && setSubject(s));
-        listCardsBySubject(userId, id).then((list) => active && setCards(list));
-      }
-      return () => {
-        active = false;
-      };
+      load();
       // eslint-disable-next-line react-hooks/exhaustive-deps -- version triggers a refetch on realtime pushes
-    }, [userId, id, version])
+    }, [load, version])
   );
 
   async function handleCreateCard() {
@@ -69,7 +77,9 @@ export default function SubjectDetailScreen() {
       setQuestion('');
       setAnswer('');
       setAddingCard(false);
-      loadCards();
+      await loadCards();
+    } catch {
+      Alert.alert(t('subject.newCard'), t('common.loadError'));
     } finally {
       setSaving(false);
     }
@@ -83,12 +93,19 @@ export default function SubjectDetailScreen() {
         text: t('book.deleteUnit'),
         style: 'destructive',
         onPress: async () => {
-          await deleteSubject(userId, id);
-          router.back();
+          try {
+            await deleteSubject(userId, id);
+            router.back();
+          } catch {
+            Alert.alert(t('book.deleteUnit'), t('common.loadError'));
+          }
         },
       },
     ]);
   }
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={t('common.loadError')} onRetry={load} />;
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

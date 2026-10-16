@@ -1,4 +1,6 @@
 export const en = {
+  'common.retry': 'Try again',
+  'common.loadError': "Couldn't load this — check your connection.",
   'tabs.home': 'Home',
   'tabs.library': 'Library',
   'tabs.settings': 'Settings',
@@ -157,6 +159,8 @@ export const en = {
 export type TranslationKey = keyof typeof en;
 
 export const ru: Record<TranslationKey, string> = {
+  'common.retry': 'Повторить',
+  'common.loadError': 'Не удалось загрузить — проверьте соединение.',
   'tabs.home': 'Главная',
   'tabs.library': 'Библиотека',
   'tabs.settings': 'Настройки',
@@ -313,6 +317,8 @@ export const ru: Record<TranslationKey, string> = {
 };
 
 export const uz: Record<TranslationKey, string> = {
+  'common.retry': "Qayta urinish",
+  'common.loadError': "Yuklab bo'lmadi — internetni tekshiring.",
   'tabs.home': 'Bosh sahifa',
   'tabs.library': 'Kutubxona',
   'tabs.settings': 'Sozlamalar',

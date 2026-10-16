@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LoadingState } from '@/components/CenterState';
 import { deleteCard, getCard, updateCard } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
@@ -19,16 +20,20 @@ export default function EditCardScreen() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    getCard(userId, id).then((card) => {
-      if (card) {
-        setQuestion(card.question);
-        setAnswer(card.answer);
-      }
-    });
-  }, [userId, id]);
+    getCard(userId, id)
+      .then((card) => {
+        if (card) {
+          setQuestion(card.question);
+          setAnswer(card.answer);
+        }
+      })
+      .catch(() => Alert.alert(t('edit.title'), t('common.loadError')))
+      .finally(() => setLoading(false));
+  }, [userId, id, t]);
 
   async function handleSave() {
     if (!id || !question.trim() || !answer.trim()) return;
@@ -36,6 +41,8 @@ export default function EditCardScreen() {
     try {
       await updateCard(userId, id, { question, answer });
       router.back();
+    } catch {
+      Alert.alert(t('edit.save'), t('common.loadError'));
     } finally {
       setSaving(false);
     }
@@ -49,14 +56,20 @@ export default function EditCardScreen() {
         text: t('edit.delete'),
         style: 'destructive',
         onPress: async () => {
-          await deleteCard(userId, id);
-          router.back();
+          try {
+            await deleteCard(userId, id);
+            router.back();
+          } catch {
+            Alert.alert(t('edit.delete'), t('common.loadError'));
+          }
         },
       },
     ]);
   }
 
   const canSave = question.trim().length > 0 && answer.trim().length > 0;
+
+  if (loading) return <LoadingState />;
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

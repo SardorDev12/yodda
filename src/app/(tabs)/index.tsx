@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ErrorState, LoadingState } from '@/components/CenterState';
 import { getHomeStats, type HomeStats } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
@@ -25,23 +26,32 @@ export default function HomeScreen() {
   const { colors, t } = useSettings();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [stats, setStats] = useState<HomeStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      getHomeStats(userId).then((result) => {
+  const load = useCallback(() => {
+    let active = true;
+    setError(false);
+    getHomeStats(userId)
+      .then((result) => {
         if (active) setStats(result);
-      });
-      return () => {
-        active = false;
-      };
-      // version isn't read here, but bumping it (on a realtime push from
-      // another device) should trigger exactly this refetch.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId, version])
-  );
+      })
+      .catch(() => active && setError(true))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+    // version isn't read here, but bumping it (on a realtime push from
+    // another device) should trigger exactly this refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, version]);
+
+  useFocusEffect(load);
 
   const dueToday = stats?.dueToday ?? 0;
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={t('common.loadError')} onRetry={load} />;
 
   return (
     <ScrollView

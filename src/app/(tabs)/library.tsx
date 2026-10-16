@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ErrorState, LoadingState } from '@/components/CenterState';
 import { createBook, listBooks } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
@@ -21,32 +22,45 @@ export default function LibraryScreen() {
   const [books, setBooks] = useState<BookWithCounts[]>([]);
   const [addingBook, setAddingBook] = useState(false);
   const [newBookName, setNewBookName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const loadBooks = useCallback(() => {
-    listBooks(userId).then(setBooks);
+    return listBooks(userId)
+      .then((list) => {
+        setBooks(list);
+        setError(false);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, [userId]);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      listBooks(userId).then((list) => {
-        if (active) setBooks(list);
-      });
-      return () => {
-        active = false;
-      };
+      loadBooks();
       // eslint-disable-next-line react-hooks/exhaustive-deps -- version triggers a refetch on realtime pushes
-    }, [userId, version])
+    }, [loadBooks, version])
   );
 
   async function handleCreateBook() {
     const name = newBookName.trim();
     if (!name) return;
-    await createBook(userId, name);
-    setNewBookName('');
-    setAddingBook(false);
-    loadBooks();
+    setSaving(true);
+    try {
+      await createBook(userId, name);
+      setNewBookName('');
+      setAddingBook(false);
+      await loadBooks();
+    } catch {
+      Alert.alert(t('library.newBook'), t('common.loadError'));
+    } finally {
+      setSaving(false);
+    }
   }
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={t('common.loadError')} onRetry={loadBooks} />;
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -67,8 +81,12 @@ export default function LibraryScreen() {
                 autoFocus
                 onSubmitEditing={handleCreateBook}
               />
-              <Pressable style={styles.newBookSave} onPress={handleCreateBook}>
-                <Text style={styles.newBookSaveText}>{t('add.add')}</Text>
+              <Pressable
+                style={[styles.newBookSave, (saving || !newBookName.trim()) && styles.newBookSaveDisabled]}
+                onPress={handleCreateBook}
+                disabled={saving || !newBookName.trim()}
+              >
+                <Text style={styles.newBookSaveText}>{saving ? t('add.saving') : t('add.add')}</Text>
               </Pressable>
             </View>
           ) : (
@@ -135,6 +153,7 @@ function makeStyles(colors: ThemeColors) {
       paddingHorizontal: spacing(2),
       justifyContent: 'center',
     },
+    newBookSaveDisabled: { backgroundColor: colors.border },
     newBookSaveText: { color: '#fff', fontWeight: '700' },
     row: {
       flexDirection: 'row',

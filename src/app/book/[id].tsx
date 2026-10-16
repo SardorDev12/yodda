@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ErrorState, LoadingState } from '@/components/CenterState';
 import { RowMenu } from '@/components/RowMenu';
 import { createSubject, deleteBook, getBook, listSubjects } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
@@ -24,32 +25,43 @@ export default function BookDetailScreen() {
   const [units, setUnits] = useState<SubjectWithCounts[]>([]);
   const [addingUnit, setAddingUnit] = useState(false);
   const [newUnitName, setNewUnitName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const loadUnits = useCallback(() => {
-    if (id) listSubjects(userId, id).then(setUnits);
+  const load = useCallback(() => {
+    if (!id) return;
+    setError(false);
+    Promise.all([getBook(userId, id), listSubjects(userId, id)])
+      .then(([b, list]) => {
+        setBook(b);
+        setUnits(list);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, [userId, id]);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      if (id) {
-        getBook(userId, id).then((b) => active && setBook(b));
-        listSubjects(userId, id).then((list) => active && setUnits(list));
-      }
-      return () => {
-        active = false;
-      };
+      load();
       // eslint-disable-next-line react-hooks/exhaustive-deps -- version triggers a refetch on realtime pushes
-    }, [userId, id, version])
+    }, [load, version])
   );
 
   async function handleCreateUnit() {
     const name = newUnitName.trim();
     if (!name || !id) return;
-    await createSubject(userId, id, name);
-    setNewUnitName('');
-    setAddingUnit(false);
-    loadUnits();
+    setSaving(true);
+    try {
+      await createSubject(userId, id, name);
+      setNewUnitName('');
+      setAddingUnit(false);
+      load();
+    } catch {
+      Alert.alert(t('book.newUnit'), t('common.loadError'));
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleDeleteBook() {
@@ -60,12 +72,19 @@ export default function BookDetailScreen() {
         text: t('library.deleteBook'),
         style: 'destructive',
         onPress: async () => {
-          await deleteBook(userId, id);
-          router.back();
+          try {
+            await deleteBook(userId, id);
+            router.back();
+          } catch {
+            Alert.alert(t('library.deleteBook'), t('common.loadError'));
+          }
         },
       },
     ]);
   }
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={t('common.loadError')} onRetry={load} />;
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -100,8 +119,12 @@ export default function BookDetailScreen() {
                   autoFocus
                   onSubmitEditing={handleCreateUnit}
                 />
-                <Pressable style={styles.newUnitSave} onPress={handleCreateUnit}>
-                  <Text style={styles.newUnitSaveText}>{t('add.add')}</Text>
+                <Pressable
+                  style={[styles.newUnitSave, (saving || !newUnitName.trim()) && styles.newUnitSaveDisabled]}
+                  onPress={handleCreateUnit}
+                  disabled={saving || !newUnitName.trim()}
+                >
+                  <Text style={styles.newUnitSaveText}>{saving ? t('add.saving') : t('add.add')}</Text>
                 </Pressable>
               </View>
             ) : (
@@ -177,6 +200,7 @@ function makeStyles(colors: ThemeColors) {
       paddingHorizontal: spacing(2),
       justifyContent: 'center',
     },
+    newUnitSaveDisabled: { backgroundColor: colors.border },
     newUnitSaveText: { color: '#fff', fontWeight: '700' },
     row: {
       flexDirection: 'row',

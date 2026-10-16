@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/CenterState';
 import { getDueCards, getRevisionCards, getRevisionCardsByBook, recordReview } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
@@ -27,29 +28,53 @@ export default function ReviewScreen() {
     [colors, t]
   );
   const [queue, setQueue] = useState<Card[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const load = !isRevision
+  const load = () => {
+    const result = !isRevision
       ? getDueCards(userId)
       : bookId
         ? getRevisionCardsByBook(userId, bookId)
         : getRevisionCards(userId, subjectId);
-    load.then(setQueue);
-  }, [userId, isRevision, subjectId, bookId]);
+    result
+      .then((list) => {
+        setQueue(list);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true));
+  };
+
+  useEffect(load, [userId, isRevision, subjectId, bookId]);
 
   const current = queue?.[index];
   const front = reviewOrder === 'answer' ? current?.answer : current?.question;
   const back = reviewOrder === 'answer' ? current?.question : current?.answer;
 
   async function handleRate(rating: Rating) {
-    if (!current) return;
-    await recordReview(userId, current, rating);
-    setReviewedCount((n) => n + 1);
-    setRevealed(false);
-    setIndex((i) => i + 1);
+    if (!current || submitting) return;
+    setSubmitting(true);
+    try {
+      await recordReview(userId, current, rating);
+      setReviewedCount((n) => n + 1);
+      setRevealed(false);
+      setIndex((i) => i + 1);
+    } catch {
+      Alert.alert(t('review.showAnswer'), t('common.loadError'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <ErrorState message={t('common.loadError')} onRetry={load} />
+      </SafeAreaView>
+    );
   }
 
   if (queue === null) {
@@ -108,7 +133,12 @@ export default function ReviewScreen() {
       ) : (
         <View style={styles.ratingRow}>
           {RATINGS.map((r) => (
-            <Pressable key={r.key} style={[styles.ratingButton, { borderColor: r.color }]} onPress={() => handleRate(r.key)}>
+            <Pressable
+              key={r.key}
+              style={[styles.ratingButton, { borderColor: r.color }, submitting && styles.ratingButtonDisabled]}
+              disabled={submitting}
+              onPress={() => handleRate(r.key)}
+            >
               <Text style={[styles.ratingText, { color: r.color }]}>{r.label}</Text>
             </Pressable>
           ))}
@@ -151,6 +181,7 @@ function makeStyles(colors: ThemeColors) {
       borderWidth: 1.5,
       alignItems: 'center',
     },
+    ratingButtonDisabled: { opacity: 0.5 },
     ratingText: { fontWeight: '700' },
     muted: { color: colors.muted, textAlign: 'center' },
     doneTitle: { fontSize: 22, fontWeight: '700', color: colors.text },
