@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useSettings } from '@/store/settings-context';
@@ -32,9 +34,23 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
   );
 }
 
+/** An icon + message for an empty list — reads as "nothing here yet, by
+ * design" rather than a bare line of gray text, which can look broken. */
+export function EmptyState({ icon, message }: { icon: ComponentProps<typeof Ionicons>['name']; message: string }) {
+  const { colors } = useSettings();
+  const s = styles(colors);
+  return (
+    <View style={s.emptyWrap}>
+      <Ionicons name={icon} size={32} color={colors.border} />
+      <Text style={s.message}>{message}</Text>
+    </View>
+  );
+}
+
 const styles = (colors: ThemeColors) =>
   StyleSheet.create({
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing(3), gap: spacing(1.5) },
+    emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing(5), gap: spacing(1) },
     message: { color: colors.muted, textAlign: 'center', fontSize: 14 },
     retryButton: { backgroundColor: colors.primarySoft, borderRadius: radius.sm, paddingVertical: spacing(1), paddingHorizontal: spacing(2.5) },
     retryText: { color: colors.primary, fontWeight: '700', fontSize: 14 },

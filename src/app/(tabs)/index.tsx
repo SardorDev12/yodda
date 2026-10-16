@@ -9,7 +9,7 @@ import { getHomeStats, type HomeStats } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type ThemeColors } from '@/theme';
 
 function greetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'home.greetingEvening' {
   const hour = new Date().getHours();
@@ -66,14 +66,21 @@ export default function HomeScreen() {
         <Text style={styles.heroCaption}>{t('home.thingsToRemember')}</Text>
 
         <Pressable
-          style={[styles.startButton, dueToday === 0 && styles.startButtonDisabled]}
+          style={({ pressed }) => [
+            styles.startButton,
+            dueToday === 0 && styles.startButtonDisabled,
+            pressed && dueToday > 0 && styles.pressedDim,
+          ]}
           disabled={dueToday === 0}
           onPress={() => router.push('/review')}
         >
           <Text style={styles.startButtonText}>{dueToday === 0 ? t('home.allCaughtUp') : t('home.startReview')}</Text>
         </Pressable>
 
-        <Pressable style={styles.reviseButton} onPress={() => router.push('/review?mode=revise')}>
+        <Pressable
+          style={({ pressed }) => [styles.reviseButton, pressed && styles.pressedDim]}
+          onPress={() => router.push('/review?mode=revise')}
+        >
           <Text style={styles.reviseButtonText}>{t('home.reviseAnytime')}</Text>
         </Pressable>
       </View>
@@ -94,7 +101,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Pressable style={styles.addButton} onPress={() => router.push('/library')}>
+      <Pressable
+        style={({ pressed }) => [styles.addButton, pressed && styles.pressedDim]}
+        onPress={() => router.push('/library')}
+      >
         <Ionicons name="add-circle" size={22} color={colors.primary} />
         <Text style={styles.addButtonText}>{t('home.addKnowledge')}</Text>
       </Pressable>
@@ -105,7 +115,8 @@ export default function HomeScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: spacing(2.5), gap: spacing(2.5) },
+    content: { padding: spacing(2.5), gap: spacing(2.5), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     greeting: { fontSize: 22, fontWeight: '700', color: colors.text },
     heroCard: {
       backgroundColor: colors.card,
@@ -114,6 +125,7 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
       borderWidth: 1,
       borderColor: colors.border,
+      ...shadow.card,
     },
     heroLabel: { fontSize: 12, fontWeight: '700', color: colors.muted, letterSpacing: 1 },
     heroNumber: { fontSize: 56, fontWeight: '800', color: colors.text, marginTop: spacing(0.5) },
@@ -147,6 +159,7 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
       borderWidth: 1,
       borderColor: colors.border,
+      ...shadow.card,
     },
     upcomingNumber: { fontSize: 20, fontWeight: '700', color: colors.text },
     upcomingLabel: { fontSize: 12, color: colors.muted, marginTop: 2 },

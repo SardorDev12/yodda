@@ -29,8 +29,43 @@ export type Scheme = 'light' | 'dark';
 
 export const spacing = (n: number) => n * 8;
 
+/**
+ * On a wide desktop window, unconstrained text/cards stretch to an
+ * uncomfortable reading width and buttons balloon to hundreds of pixels
+ * wide — the same problem fixed for Settings' toggle rows, generalized.
+ * Content columns cap here, centered, while the sidebar/background still
+ * use the full window.
+ */
+export const contentMaxWidth = 640;
+
 export const radius = {
   sm: 8,
   md: 14,
   lg: 20,
+};
+
+/**
+ * Flat 1px borders read as "wireframe" at a glance — a soft shadow gives
+ * cards actual depth/elevation, the way most native and web UIs separate
+ * surfaces from their background. Two levels: `card` for resting content
+ * cards/rows, `raised` for things that should read as "above" the rest
+ * (e.g. a floating action area). Cross-platform: shadow* for iOS,
+ * elevation for Android, boxShadow for web (RN Web maps shadow* to it
+ * automatically, but web's rendering reads better with explicit values).
+ */
+export const shadow = {
+  card: {
+    shadowColor: '#0B0B12',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  raised: {
+    shadowColor: '#0B0B12',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
 };

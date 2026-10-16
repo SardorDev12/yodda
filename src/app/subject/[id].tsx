@@ -14,13 +14,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ErrorState, LoadingState } from '@/components/CenterState';
+import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
 import { RowMenu } from '@/components/RowMenu';
 import { createCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type ThemeColors } from '@/theme';
 import type { Card, CardStatus, Subject } from '@/types';
 
 export default function SubjectDetailScreen() {
@@ -122,12 +122,12 @@ export default function SubjectDetailScreen() {
         keyExtractor={(c) => c.id}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(4) }]}
-        ListEmptyComponent={<Text style={styles.empty}>{t('subject.empty')}</Text>}
+        ListEmptyComponent={<EmptyState icon="card-outline" message={t('subject.empty')} />}
         ListHeaderComponent={
           <View style={styles.headerGap}>
             {cards.length > 0 && (
               <Pressable
-                style={styles.reviewButton}
+                style={({ pressed }) => [styles.reviewButton, pressed && styles.pressedDim]}
                 onPress={() => id && router.push(`/review?mode=revise&subjectId=${id}`)}
               >
                 <Text style={styles.reviewButtonText}>{t('subject.reviewSubject')}</Text>
@@ -153,7 +153,10 @@ export default function SubjectDetailScreen() {
                   multiline
                 />
                 <View style={styles.newCardActions}>
-                  <Pressable style={styles.newCardCancel} onPress={() => setAddingCard(false)}>
+                  <Pressable
+                    style={({ pressed }) => [styles.newCardCancel, pressed && styles.pressedDim]}
+                    onPress={() => setAddingCard(false)}
+                  >
                     <Text style={styles.newCardCancelText}>{t('edit.cancel')}</Text>
                   </Pressable>
                   <Pressable
@@ -166,7 +169,10 @@ export default function SubjectDetailScreen() {
                 </View>
               </View>
             ) : (
-              <Pressable style={styles.addCardButton} onPress={() => setAddingCard(true)}>
+              <Pressable
+                style={({ pressed }) => [styles.addCardButton, pressed && styles.pressedDim]}
+                onPress={() => setAddingCard(true)}
+              >
                 <Ionicons name="add" size={18} color={colors.primary} />
                 <Text style={styles.addCardButtonText}>{t('subject.newCard')}</Text>
               </Pressable>
@@ -174,7 +180,10 @@ export default function SubjectDetailScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable style={styles.card} onPress={() => router.push(`/edit-card?id=${item.id}`)}>
+          <Pressable
+            style={({ pressed }) => [styles.card, pressed && styles.pressedDim]}
+            onPress={() => router.push(`/edit-card?id=${item.id}`)}
+          >
             <Text style={styles.question}>{item.question}</Text>
             <Text style={styles.answer} numberOfLines={2}>
               {item.answer}
@@ -190,14 +199,15 @@ export default function SubjectDetailScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    list: { padding: spacing(2.5), gap: spacing(1.5) },
-    empty: { color: colors.muted, textAlign: 'center', marginTop: spacing(4) },
+    list: { padding: spacing(2.5), gap: spacing(1.5), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     card: {
       backgroundColor: colors.card,
       borderRadius: radius.md,
       padding: spacing(2),
       borderWidth: 1,
       borderColor: colors.border,
+      ...shadow.card,
     },
     question: { fontSize: 15, fontWeight: '600', color: colors.text },
     answer: { fontSize: 13, color: colors.muted, marginTop: 4 },

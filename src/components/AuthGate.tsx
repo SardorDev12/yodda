@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DEFAULT_LANGUAGE, translate } from '@/i18n';
 import { useAuth } from '@/store/auth-context';
-import { lightColors, radius, spacing } from '@/theme';
+import { lightColors, radius, shadow, spacing } from '@/theme';
 
 const t = (key: string, params?: Record<string, string | number>) => translate(DEFAULT_LANGUAGE, key, params);
 const colors = lightColors;
@@ -40,8 +40,8 @@ export function AuthGate() {
   return (
     <SafeAreaView style={styles.root}>
       <KeyboardAvoidingView style={styles.center} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <Image source={require('../../assets/icon.png')} style={styles.logo} />
         <View style={styles.card}>
-          <Image source={require('../../assets/icon.png')} style={styles.logo} />
           <Text style={styles.title}>{mode === 'signin' ? t('auth.signIn') : t('auth.createAccount')}</Text>
           <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
 
@@ -75,7 +75,11 @@ export function AuthGate() {
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <Pressable style={styles.button} onPress={handleSubmit} disabled={busy}>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && !busy && styles.pressedDim]}
+            onPress={handleSubmit}
+            disabled={busy}
+          >
             {busy ? (
               <ActivityIndicator color="#fff" />
             ) : (
@@ -83,7 +87,10 @@ export function AuthGate() {
             )}
           </Pressable>
 
-          <Pressable onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
+          <Pressable
+            style={({ pressed }) => pressed && styles.pressedDim}
+            onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+          >
             <Text style={styles.switchText}>{mode === 'signin' ? t('auth.switchToSignUp') : t('auth.switchToSignIn')}</Text>
           </Pressable>
         </View>
@@ -95,8 +102,19 @@ export function AuthGate() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing(3) },
-  card: { width: '100%', maxWidth: 380, gap: spacing(1.5) },
-  logo: { width: 56, height: 56, borderRadius: radius.md, alignSelf: 'center', marginBottom: spacing(1) },
+  pressedDim: { opacity: 0.7 },
+  card: {
+    width: '100%',
+    maxWidth: 380,
+    gap: spacing(1.5),
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing(3),
+    ...shadow.raised,
+  },
+  logo: { width: 56, height: 56, borderRadius: radius.md, marginBottom: spacing(2) },
   title: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
   subtitle: { fontSize: 14, color: colors.muted, marginBottom: spacing(1), textAlign: 'center' },
   input: {

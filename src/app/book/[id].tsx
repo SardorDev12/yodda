@@ -4,13 +4,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ErrorState, LoadingState } from '@/components/CenterState';
+import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
 import { RowMenu } from '@/components/RowMenu';
 import { createSubject, deleteBook, getBook, listSubjects } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type ThemeColors } from '@/theme';
 import type { Book, SubjectWithCounts } from '@/types';
 
 export default function BookDetailScreen() {
@@ -104,7 +104,10 @@ export default function BookDetailScreen() {
         ListHeaderComponent={
           <View style={styles.headerGap}>
             {units.length > 0 && (
-              <Pressable style={styles.reviewButton} onPress={() => id && router.push(`/review?mode=revise&bookId=${id}`)}>
+              <Pressable
+                style={({ pressed }) => [styles.reviewButton, pressed && styles.pressedDim]}
+                onPress={() => id && router.push(`/review?mode=revise&bookId=${id}`)}
+              >
                 <Text style={styles.reviewButtonText}>{t('book.reviewBook')}</Text>
               </Pressable>
             )}
@@ -128,16 +131,22 @@ export default function BookDetailScreen() {
                 </Pressable>
               </View>
             ) : (
-              <Pressable style={styles.addUnitButton} onPress={() => setAddingUnit(true)}>
+              <Pressable
+                style={({ pressed }) => [styles.addUnitButton, pressed && styles.pressedDim]}
+                onPress={() => setAddingUnit(true)}
+              >
                 <Ionicons name="add" size={18} color={colors.primary} />
                 <Text style={styles.addUnitButtonText}>{t('book.newUnit')}</Text>
               </Pressable>
             )}
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>{t('book.empty')}</Text>}
+        ListEmptyComponent={<EmptyState icon="file-tray-outline" message={t('book.empty')} />}
         renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => router.push(`/subject/${item.id}`)}>
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && styles.pressedDim]}
+            onPress={() => router.push(`/subject/${item.id}`)}
+          >
             <View>
               <Text style={styles.rowTitle}>{item.name}</Text>
               <Text style={styles.rowSubtitle}>
@@ -162,8 +171,8 @@ export default function BookDetailScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    list: { padding: spacing(2.5), gap: spacing(1.5) },
-    empty: { color: colors.muted, textAlign: 'center', marginTop: spacing(4) },
+    list: { padding: spacing(2.5), gap: spacing(1.5), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     addUnitButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -211,6 +220,7 @@ function makeStyles(colors: ThemeColors) {
       padding: spacing(2),
       borderWidth: 1,
       borderColor: colors.border,
+      ...shadow.card,
     },
     rowTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
     rowSubtitle: { fontSize: 13, color: colors.muted, marginTop: 2 },

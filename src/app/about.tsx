@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type ThemeColors } from '@/theme';
 
 function Section({
   title,
@@ -63,7 +63,7 @@ export default function AboutScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: spacing(2.5), gap: spacing(2) },
+    content: { padding: spacing(2.5), gap: spacing(2), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
     hero: { fontSize: 30, fontWeight: '800', color: colors.text, textAlign: 'center', marginTop: spacing(1) },
     tagline: { fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: spacing(1) },
     section: {
@@ -73,6 +73,7 @@ function makeStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
       gap: spacing(1.25),
+      ...shadow.card,
     },
     sectionTitle: { fontSize: 13, fontWeight: '700', color: colors.muted, textTransform: 'uppercase' },
     paragraph: { fontSize: 14.5, color: colors.text, lineHeight: 21 },

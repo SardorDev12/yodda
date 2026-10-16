@@ -4,12 +4,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ErrorState, LoadingState } from '@/components/CenterState';
+import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
 import { createBook, listBooks } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type ThemeColors } from '@/theme';
 import type { BookWithCounts } from '@/types';
 
 export default function LibraryScreen() {
@@ -90,15 +90,21 @@ export default function LibraryScreen() {
               </Pressable>
             </View>
           ) : (
-            <Pressable style={styles.addBookButton} onPress={() => setAddingBook(true)}>
+            <Pressable
+              style={({ pressed }) => [styles.addBookButton, pressed && styles.pressedDim]}
+              onPress={() => setAddingBook(true)}
+            >
               <Ionicons name="add" size={18} color={colors.primary} />
               <Text style={styles.addBookButtonText}>{t('library.newBook')}</Text>
             </Pressable>
           )
         }
-        ListEmptyComponent={<Text style={styles.empty}>{t('library.empty')}</Text>}
+        ListEmptyComponent={<EmptyState icon="library-outline" message={t('library.empty')} />}
         renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => router.push(`/book/${item.id}`)}>
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && styles.pressedDim]}
+            onPress={() => router.push(`/book/${item.id}`)}
+          >
             <View>
               <Text style={styles.rowTitle}>{item.name}</Text>
               <Text style={styles.rowSubtitle}>
@@ -123,8 +129,8 @@ export default function LibraryScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    list: { padding: spacing(2.5), gap: spacing(1.5) },
-    empty: { color: colors.muted, textAlign: 'center', marginTop: spacing(4) },
+    list: { padding: spacing(2.5), gap: spacing(1.5), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     addBookButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -164,6 +170,7 @@ function makeStyles(colors: ThemeColors) {
       padding: spacing(2),
       borderWidth: 1,
       borderColor: colors.border,
+      ...shadow.card,
     },
     rowTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
     rowSubtitle: { fontSize: 13, color: colors.muted, marginTop: 2 },

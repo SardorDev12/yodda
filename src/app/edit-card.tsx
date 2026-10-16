@@ -7,7 +7,7 @@ import { LoadingState } from '@/components/CenterState';
 import { deleteCard, getCard, updateCard } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, spacing, type ThemeColors } from '@/theme';
 
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -95,11 +95,18 @@ export default function EditCardScreen() {
           multiline
         />
 
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+        <Pressable
+          style={({ pressed }) => [styles.deleteButton, pressed && styles.pressedDim]}
+          onPress={handleDelete}
+        >
           <Text style={styles.deleteButtonText}>{t('edit.delete')}</Text>
         </Pressable>
 
-        <Pressable style={[styles.saveButton, !canSave && styles.saveButtonDisabled]} disabled={!canSave || saving} onPress={handleSave}>
+        <Pressable
+          style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
+          disabled={!canSave || saving}
+          onPress={handleSave}
+        >
           <Text style={styles.saveButtonText}>{saving ? t('edit.saving') : t('edit.save')}</Text>
         </Pressable>
       </ScrollView>
@@ -110,7 +117,8 @@ export default function EditCardScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: spacing(2.5), gap: spacing(1) },
+    content: { padding: spacing(2.5), gap: spacing(1), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     label: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: spacing(2) },
     input: {
       backgroundColor: colors.card,

@@ -9,7 +9,7 @@ import { exportBackup, importBackup } from '@/lib/backup';
 import { isWeb, MAX_REMINDERS, startReminderChecks, stopReminderChecks } from '@/lib/notifications';
 import { useAuth, useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type Scheme, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type Scheme, type ThemeColors } from '@/theme';
 
 const DEFAULT_HOURS = [9, 14, 20];
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -230,7 +230,10 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
-      <Pressable style={styles.section} onPress={() => router.push('/about')}>
+      <Pressable
+        style={({ pressed }) => [styles.section, pressed && styles.pressedDim]}
+        onPress={() => router.push('/about')}
+      >
         <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
         <Text style={styles.rowLabel}>{t('settings.aboutText')}</Text>
         <Text style={styles.link}>{t('settings.howItWorks')}</Text>
@@ -259,7 +262,8 @@ export default function SettingsScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: spacing(2.5), gap: spacing(2) },
+    content: { padding: spacing(2.5), gap: spacing(2), width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     section: {
       backgroundColor: colors.card,
       borderRadius: radius.md,
@@ -267,6 +271,7 @@ function makeStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
       gap: spacing(1),
+      ...shadow.card,
     },
     sectionTitle: { fontSize: 13, fontWeight: '700', color: colors.muted, textTransform: 'uppercase' },
     rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

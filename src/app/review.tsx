@@ -8,7 +8,7 @@ import { ErrorState } from '@/components/CenterState';
 import { getDueCards, getRevisionCards, getRevisionCardsByBook, recordReview } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing, type ThemeColors } from '@/theme';
+import { contentMaxWidth, radius, shadow, spacing, type ThemeColors } from '@/theme';
 import type { Card, Rating } from '@/types';
 
 export default function ReviewScreen() {
@@ -96,7 +96,7 @@ export default function ReviewScreen() {
               ? t('review.reviewedCount', { count: reviewedCount })
               : t(isRevision ? 'review.nothingToRevise' : 'review.nothingDue')}
           </Text>
-          <Pressable style={styles.closeButton} onPress={() => router.back()}>
+          <Pressable style={({ pressed }) => [styles.closeButton, pressed && styles.pressedDim]} onPress={() => router.back()}>
             <Text style={styles.closeButtonText}>{t('review.backHome')}</Text>
           </Pressable>
         </View>
@@ -106,44 +106,51 @@ export default function ReviewScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="close" size={26} color={colors.muted} />
-        </Pressable>
-        <Text style={styles.progress}>
-          {index + 1} / {queue.length}
-        </Text>
-      </View>
+      <View style={styles.frame}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="close" size={26} color={colors.muted} />
+          </Pressable>
+          <Text style={styles.progress}>
+            {index + 1} / {queue.length}
+          </Text>
+        </View>
 
-      <View style={styles.cardArea}>
-        <Text style={styles.question}>{front}</Text>
+        <View style={styles.cardArea}>
+          <View style={styles.questionCard}>
+            <Text style={styles.question}>{front}</Text>
 
-        {revealed && (
-          <View style={styles.answerBox}>
-            <View style={styles.divider} />
-            <Text style={styles.answer}>{back}</Text>
+            {revealed && (
+              <View style={styles.answerBox}>
+                <View style={styles.divider} />
+                <Text style={styles.answer}>{back}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {!revealed ? (
+          <Pressable
+            style={({ pressed }) => [styles.showButton, pressed && styles.pressedDim]}
+            onPress={() => setRevealed(true)}
+          >
+            <Text style={styles.showButtonText}>{t('review.showAnswer')}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.ratingRow}>
+            {RATINGS.map((r) => (
+              <Pressable
+                key={r.key}
+                style={[styles.ratingButton, { borderColor: r.color }, submitting && styles.ratingButtonDisabled]}
+                disabled={submitting}
+                onPress={() => handleRate(r.key)}
+              >
+                <Text style={[styles.ratingText, { color: r.color }]}>{r.label}</Text>
+              </Pressable>
+            ))}
           </View>
         )}
       </View>
-
-      {!revealed ? (
-        <Pressable style={styles.showButton} onPress={() => setRevealed(true)}>
-          <Text style={styles.showButtonText}>{t('review.showAnswer')}</Text>
-        </Pressable>
-      ) : (
-        <View style={styles.ratingRow}>
-          {RATINGS.map((r) => (
-            <Pressable
-              key={r.key}
-              style={[styles.ratingButton, { borderColor: r.color }, submitting && styles.ratingButtonDisabled]}
-              disabled={submitting}
-              onPress={() => handleRate(r.key)}
-            >
-              <Text style={[styles.ratingText, { color: r.color }]}>{r.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
     </SafeAreaView>
   );
 }
@@ -151,6 +158,8 @@ export default function ReviewScreen() {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
+    frame: { flex: 1, width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    pressedDim: { opacity: 0.7 },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing(1), padding: spacing(3) },
     header: {
       flexDirection: 'row',
@@ -160,7 +169,15 @@ function makeStyles(colors: ThemeColors) {
       paddingTop: spacing(2),
     },
     progress: { color: colors.muted, fontWeight: '600' },
-    cardArea: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing(3) },
+    cardArea: { flex: 1, justifyContent: 'center', padding: spacing(3) },
+    questionCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing(4),
+      ...shadow.raised,
+    },
     question: { fontSize: 26, fontWeight: '700', color: colors.text, textAlign: 'center' },
     answerBox: { marginTop: spacing(3), alignItems: 'center' },
     divider: { width: 48, height: 2, backgroundColor: colors.border, marginBottom: spacing(3) },
