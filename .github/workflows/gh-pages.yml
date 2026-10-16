@@ -30,6 +30,8 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npx expo export -p web
+        env:
+          EXPO_WEB_BASE_URL: /yodda
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

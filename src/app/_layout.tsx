@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DATABASE_NAME, migrateDatabase } from '@/db/schema';
@@ -31,6 +32,18 @@ function SyncBootstrap() {
   }, [db, user]);
 
   return null;
+}
+
+/** On web, frames the app in a centered, mobile-width column instead of
+ * stretching full-bleed across a wide browser window. No-op on native. */
+function WebFrame({ children }: { children: ReactNode }) {
+  const { colors, scheme } = useSettings();
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <View style={[styles.webBackdrop, { backgroundColor: scheme === 'dark' ? '#000003' : '#E4E4EA' }]}>
+      <View style={[styles.webFrame, { backgroundColor: colors.bg }]}>{children}</View>
+    </View>
+  );
 }
 
 function Navigator() {
@@ -70,10 +83,22 @@ export default function RootLayout() {
         <SettingsProvider>
           <AuthProvider>
             <SyncBootstrap />
-            <Navigator />
+            <WebFrame>
+              <Navigator />
+            </WebFrame>
           </AuthProvider>
         </SettingsProvider>
       </SQLiteProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  webBackdrop: { flex: 1, alignItems: 'center' },
+  webFrame: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 480,
+    ...(Platform.OS === 'web' ? ({ boxShadow: '0 0 40px rgba(0, 0, 0, 0.12)' } as object) : null),
+  },
+});
