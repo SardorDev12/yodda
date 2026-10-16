@@ -90,6 +90,8 @@ export const en = {
   'settings.data': 'Data',
   'settings.dataText':
     'Data is stored on this device. Moving to a new phone? Use export / import.',
+  'settings.dataTextSync':
+    'Data is stored on this device. Moving to a new phone? Use export / import, or sign in to sync automatically.',
   'settings.exportButton': 'Export data',
   'settings.exporting': 'Exporting…',
   'settings.exportError': "Couldn't export your data. Please try again.",
@@ -244,6 +246,8 @@ export const ru: Record<TranslationKey, string> = {
   'settings.webHint': 'Локальные уведомления недоступны в вебе.',
   'settings.data': 'Данные',
   'settings.dataText': 'Данные хранятся на этом устройстве. Переходите на новый телефон? Используйте экспорт / импорт.',
+  'settings.dataTextSync':
+    'Данные хранятся на этом устройстве. Переходите на новый телефон? Используйте экспорт / импорт или войдите в аккаунт для автоматической синхронизации.',
   'settings.exportButton': 'Экспорт данных',
   'settings.exporting': 'Экспортируется…',
   'settings.exportError': 'Не удалось экспортировать данные. Попробуйте снова.',
@@ -397,6 +401,8 @@ export const uz: Record<TranslationKey, string> = {
   'settings.data': "Ma'lumotlar",
   'settings.dataText':
     "Ma'lumotlar qurilmada saqlanmoqda. Boshqa qurilmaga o'tishda, eksport / import funksiyalaridan foydalaning.",
+  'settings.dataTextSync':
+    "Ma'lumotlar qurilmada saqlanmoqda. Boshqa qurilmaga o'tishda, eksport / import funksiyalaridan foydalaning yoki hisobga kiring — avtomatik sinxronlanadi.",
   'settings.exportButton': 'Ma\'lumotlarni eksport qilish',
   'settings.exporting': 'Eksport qilinmoqda…',
   'settings.exportError': "Ma'lumotlarni eksport qilib bo'lmadi. Qayta urinib ko'ring.",

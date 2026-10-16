@@ -209,7 +209,7 @@ export default function SettingsScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.data')}</Text>
-        <Text style={styles.hint}>{t('settings.dataText')}</Text>
+        <Text style={styles.hint}>{t(syncConfigured ? 'settings.dataTextSync' : 'settings.dataText')}</Text>
 
         {!isWeb && (
           <View style={styles.backupRow}>
