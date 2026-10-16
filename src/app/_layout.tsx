@@ -35,7 +35,7 @@ function SyncBootstrap() {
 }
 
 const FRAME_BREAKPOINT = 720;
-const FRAME_MAX_WIDTH = 640;
+const FRAME_WIDTH_RATIO = 0.7;
 
 /** On a wide browser window, frames the app in a centered, readable-width
  * column with a backdrop instead of stretching full-bleed. Below the
@@ -47,7 +47,9 @@ function WebFrame({ children }: { children: ReactNode }) {
   if (Platform.OS !== 'web' || width < FRAME_BREAKPOINT) return <>{children}</>;
   return (
     <View style={[styles.webBackdrop, { backgroundColor: scheme === 'dark' ? '#000003' : '#E4E4EA' }]}>
-      <View style={[styles.webFrame, { backgroundColor: colors.bg }]}>{children}</View>
+      <View style={[styles.webFrame, { width: width * FRAME_WIDTH_RATIO, backgroundColor: colors.bg }]}>
+        {children}
+      </View>
     </View>
   );
 }
@@ -103,8 +105,6 @@ const styles = StyleSheet.create({
   webBackdrop: { flex: 1, alignItems: 'center' },
   webFrame: {
     flex: 1,
-    width: '100%',
-    maxWidth: FRAME_MAX_WIDTH,
     ...(Platform.OS === 'web' ? ({ boxShadow: '0 0 40px rgba(0, 0, 0, 0.12)' } as object) : null),
   },
 });
