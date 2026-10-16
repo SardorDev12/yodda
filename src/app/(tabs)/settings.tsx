@@ -287,7 +287,7 @@ function makeStyles(colors: ThemeColors) {
     rowLabel: { fontSize: 15, color: colors.text },
     hint: { fontSize: 13, color: colors.muted, lineHeight: 18 },
     subLabel: { fontSize: 12, fontWeight: '700', color: colors.muted, marginTop: spacing(1) },
-    orderRow: { flexDirection: 'row', gap: spacing(1) },
+    orderRow: { flexDirection: 'row', gap: spacing(1), maxWidth: 420 },
     orderChip: {
       flex: 1,
       paddingVertical: spacing(1.25),
