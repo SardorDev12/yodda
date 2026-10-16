@@ -1,16 +1,37 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SQLiteProvider } from 'expo-sqlite';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DATABASE_NAME, migrateDatabase } from '@/db/schema';
 import { syncAndroidChrome } from '@/lib/navigation-bar';
+import { runFullSync, startRealtimeSync, stopRealtimeSync } from '@/lib/sync';
+import { AuthProvider, useAuth } from '@/store/auth-context';
 import { SettingsProvider, useSettings } from '@/store/settings-context';
 // Registers the background task definition unconditionally at startup —
 // required so it also runs on a headless background launch, not just
 // while the app is open. Side-effect import; keep it, don't remove.
 import '@/tasks/reminderTask';
+
+/** Starts/stops cloud sync as the signed-in session appears or goes away. */
+function SyncBootstrap() {
+  const db = useSQLiteContext();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      stopRealtimeSync();
+      return;
+    }
+    runFullSync(db, user.id)
+      .catch(() => {})
+      .finally(() => startRealtimeSync(db, user.id));
+    return () => stopRealtimeSync();
+  }, [db, user]);
+
+  return null;
+}
 
 function Navigator() {
   const { colors, scheme, t } = useSettings();
@@ -36,6 +57,7 @@ function Navigator() {
         <Stack.Screen name="about" options={{ presentation: 'modal', title: t('about.title') }} />
         <Stack.Screen name="book/[id]" options={{ title: t('book.title') }} />
         <Stack.Screen name="subject/[id]" options={{ title: t('subject.title') }} />
+        <Stack.Screen name="login" options={{ presentation: 'modal', title: t('settings.account') }} />
       </Stack>
     </>
   );
@@ -46,7 +68,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDatabase}>
         <SettingsProvider>
-          <Navigator />
+          <AuthProvider>
+            <SyncBootstrap />
+            <Navigator />
+          </AuthProvider>
         </SettingsProvider>
       </SQLiteProvider>
     </SafeAreaProvider>

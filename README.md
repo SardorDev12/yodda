@@ -6,12 +6,18 @@ Yodda is a minimalist spaced-repetition learning app. Add anything worth
 remembering as a question/answer pair, and Yodda schedules it for review
 using an SM-2-derived algorithm — no configuration required.
 
-All data is **local-only**: everything is stored on-device in SQLite.
-There is no account, no backend, and nothing is ever sent to the cloud.
-Moving to a new phone? Settings → Data → **Export data** writes a JSON
-backup and opens the share sheet (save it anywhere — Drive, email,
-Bluetooth); **Import data** on the new device reads that file back in.
-It's a Yodda-only format, not meant for other apps.
+All data is **local-first**: everything is stored on-device in SQLite,
+and the app is fully usable offline with no account. Moving to a new
+phone? Settings → Data → **Export data** writes a JSON backup and opens
+the share sheet (save it anywhere — Drive, email, Bluetooth); **Import
+data** on the new device reads that file back in. It's a Yodda-only
+format, not meant for other apps.
+
+Optionally, signing in with an email + password (Settings → Account)
+turns on **realtime sync** via Supabase, keeping the same books/units/
+cards/reviews up to date across devices automatically. This is entirely
+off by default (see [Optional sync](#optional-sync) below) — no backend
+calls happen unless a user explicitly signs in.
 
 ## Stack
 
@@ -19,6 +25,7 @@ It's a Yodda-only format, not meant for other apps.
 - **Storage**: SQLite (`expo-sqlite`), entirely on-device
 - **Scheduler**: SM-2-derived, implemented behind a `Scheduler` interface (`src/scheduler`) so it can be swapped for FSRS later without touching callers
 - **Notifications**: `expo-notifications` for a daily review reminder
+- **Optional sync**: Supabase (Postgres + Realtime + Auth), gated entirely behind `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` — see [Optional sync](#optional-sync)
 
 ## Project structure
 
@@ -158,9 +165,34 @@ builds keep pulling OTA updates from their channel; bumping it (as you
 would for a new store release) requires a matching new build before
 updates apply again.
 
+## Optional sync
+
+Yodda stays local-only unless you set up Supabase and sign in:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In its SQL editor, run `supabase/schema.sql` from this repo (creates
+   `books`/`subjects`/`cards` tables, row-level security, and enables
+   Realtime on them).
+3. Copy `.env.example` to `.env` and fill in your project's URL and anon
+   key (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`).
+4. Rebuild the app (see below — this needs a full native build, not OTA).
+
+With those env vars unset (the default), `isSupabaseConfigured` is
+`false`, the Account section in Settings disappears, and no network
+calls to Supabase are made — existing behavior is unchanged.
+
+**This requires a full native build, not an OTA update.** Email/password
+auth added two native modules (`@react-native-async-storage/async-storage`,
+`react-native-url-polyfill`), so an app already installed from the store
+needs a new `eas build` + submission before sync is available — an
+`eas update` alone will not add it. If sync is enabled before shipping to
+Google Play, update the Play Console **Data Safety** form: it previously
+declared "no data collected," which is no longer accurate once an
+optional account feature collects email + user content.
+
 ## What's intentionally not built yet
 
 Per the product plan, the MVP stays deliberately small: no AI card
-generation, no PDF/article import, no gamification, no social features,
-no cloud sync. Those are natural future additions once the core recall
-loop is validated.
+generation, no PDF/article import, no gamification, no social features.
+Cloud sync is now available as an opt-in account feature (see above);
+everything else stays a natural future addition once validated.

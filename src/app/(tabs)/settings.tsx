@@ -8,6 +8,7 @@ import { getSetting, setSetting } from '@/db/queries';
 import { LANGUAGES, type Language } from '@/i18n';
 import { exportBackup, importBackup } from '@/lib/backup';
 import { isWeb, MAX_REMINDERS, startReminderChecks, stopReminderChecks } from '@/lib/notifications';
+import { useAuth } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type Scheme, type ThemeColors } from '@/theme';
 
@@ -29,6 +30,7 @@ export default function SettingsScreen() {
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
   const { colors, language, reviewOrder, scheme, setLanguage, setReviewOrder, setScheme, t } = useSettings();
+  const { isConfigured: syncConfigured, loading: authLoading, signOut, user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [remindersOn, setRemindersOn] = useState(false);
@@ -220,6 +222,27 @@ export default function SettingsScreen() {
           </View>
         )}
       </View>
+
+      {syncConfigured && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
+          {user ? (
+            <>
+              <Text style={styles.rowLabel}>{t('settings.signedInAs', { email: user.email ?? '' })}</Text>
+              <Pressable style={styles.backupButton} onPress={signOut}>
+                <Text style={styles.backupButtonText}>{t('settings.signOut')}</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={styles.hint}>{t('settings.syncHint')}</Text>
+              <Pressable style={styles.backupButton} onPress={() => router.push('/login')} disabled={authLoading}>
+                <Text style={styles.backupButtonText}>{authLoading ? t('settings.syncing') : t('settings.signIn')}</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      )}
 
       <Pressable style={styles.section} onPress={() => router.push('/about')}>
         <Text style={styles.sectionTitle}>{t('settings.about')}</Text>

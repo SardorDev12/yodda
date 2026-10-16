@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
 import { createCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
+import { pushAll } from '@/lib/sync';
+import { useAuth } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, CardStatus, Subject } from '@/types';
@@ -27,6 +29,7 @@ export default function SubjectDetailScreen() {
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
+  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const STATUS_LABEL: Record<CardStatus, string> = {
     new: t('status.new'),
@@ -67,6 +70,7 @@ export default function SubjectDetailScreen() {
       setAnswer('');
       setAddingCard(false);
       loadCards();
+      if (user) pushAll(db, user.id).catch(() => {});
     } finally {
       setSaving(false);
     }
@@ -81,6 +85,7 @@ export default function SubjectDetailScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteSubject(db, id);
+          if (user) pushAll(db, user.id).catch(() => {});
           router.back();
         },
       },
