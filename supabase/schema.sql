@@ -1,6 +1,7 @@
--- Yodda cloud sync schema.
+-- Yodda cloud data schema.
 -- Run this once in your Supabase project's SQL editor (or via `supabase db push`).
--- The app works fully offline without this; it only enables cross-device sync.
+-- Supabase is the app's only data store — every build needs a project
+-- configured with this schema; there is no offline/local-only mode.
 
 create extension if not exists "pgcrypto";
 
@@ -37,15 +38,23 @@ create table if not exists public.cards (
   deleted boolean not null default false
 );
 
+create table if not exists public.user_settings (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_books_user_id on public.books (user_id);
 create index if not exists idx_subjects_user_id on public.subjects (user_id);
 create index if not exists idx_subjects_book_id on public.subjects (book_id);
 create index if not exists idx_cards_user_id on public.cards (user_id);
 create index if not exists idx_cards_updated_at on public.cards (updated_at);
+create index if not exists idx_cards_subject_id on public.cards (subject_id);
 
 alter table public.books enable row level security;
 alter table public.subjects enable row level security;
 alter table public.cards enable row level security;
+alter table public.user_settings enable row level security;
 
 drop policy if exists "books_owner_all" on public.books;
 create policy "books_owner_all" on public.books
@@ -57,6 +66,10 @@ create policy "subjects_owner_all" on public.subjects
 
 drop policy if exists "cards_owner_all" on public.cards;
 create policy "cards_owner_all" on public.cards
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "user_settings_owner_all" on public.user_settings;
+create policy "user_settings_owner_all" on public.user_settings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Realtime: let clients subscribe to postgres_changes on these tables.

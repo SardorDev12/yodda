@@ -60,3 +60,11 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
+
+/** For screens rendered only once signed in (everything past the auth
+ * gate) — avoids every call site re-checking `user` for null. */
+export function useUserId(): string {
+  const { user } = useAuth();
+  if (!user) throw new Error('useUserId called before sign-in');
+  return user.id;
+}

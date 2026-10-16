@@ -1,24 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getDueCards, getRevisionCards, getRevisionCardsByBook, recordReview } from '@/db/queries';
-import { pushAll } from '@/lib/sync';
-import { useAuth } from '@/store/auth-context';
+import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, Rating } from '@/types';
 
 export default function ReviewScreen() {
-  const db = useSQLiteContext();
+  const userId = useUserId();
   const router = useRouter();
   const { mode, subjectId, bookId } = useLocalSearchParams<{ mode?: string; subjectId?: string; bookId?: string }>();
   const isRevision = mode === 'revise';
   const { colors, reviewOrder, t } = useSettings();
-  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const RATINGS: { key: Rating; label: string; color: string }[] = useMemo(
     () => [
@@ -36,12 +33,12 @@ export default function ReviewScreen() {
 
   useEffect(() => {
     const load = !isRevision
-      ? getDueCards(db)
+      ? getDueCards(userId)
       : bookId
-        ? getRevisionCardsByBook(db, bookId)
-        : getRevisionCards(db, subjectId);
+        ? getRevisionCardsByBook(userId, bookId)
+        : getRevisionCards(userId, subjectId);
     load.then(setQueue);
-  }, [db, isRevision, subjectId, bookId]);
+  }, [userId, isRevision, subjectId, bookId]);
 
   const current = queue?.[index];
   const front = reviewOrder === 'answer' ? current?.answer : current?.question;
@@ -49,8 +46,7 @@ export default function ReviewScreen() {
 
   async function handleRate(rating: Rating) {
     if (!current) return;
-    await recordReview(db, current, rating);
-    if (user) pushAll(db, user.id).catch(() => {});
+    await recordReview(userId, current, rating);
     setReviewedCount((n) => n + 1);
     setRevealed(false);
     setIndex((i) => i + 1);

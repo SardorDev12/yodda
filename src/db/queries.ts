@@ -1,10 +1,22 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
-
+import { supabase } from '@/lib/supabase';
 import { scheduler } from '@/scheduler';
-import type { Book, BookWithCounts, Card, Rating, Subject, SubjectWithCounts } from '@/types';
+import type { Book, BookWithCounts, Card, CardStatus, Rating, Subject, SubjectWithCounts } from '@/types';
+
+function requireClient() {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  return supabase;
+}
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function rowToBook(row: any): Book {
+  return { id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at };
+}
+
+function rowToSubject(row: any): Subject {
+  return { id: row.id, bookId: row.book_id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
 function rowToCard(row: any): Card {
@@ -24,174 +36,181 @@ function rowToCard(row: any): Card {
   };
 }
 
-export async function listBooks(db: SQLiteDatabase): Promise<BookWithCounts[]> {
+export async function listBooks(userId: string): Promise<BookWithCounts[]> {
+  const db = requireClient();
   const now = new Date().toISOString();
-  const rows = await db.getAllAsync<any>(
-    `SELECT
-        b.id, b.name, b.created_at, b.updated_at,
-        COUNT(DISTINCT s.id) AS unit_count,
-        COUNT(c.id) FILTER (WHERE c.deleted = 0) AS total_cards,
-        COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today
-      FROM books b
-      LEFT JOIN subjects s ON s.book_id = b.id
-      LEFT JOIN cards c ON c.subject_id = s.id
-      GROUP BY b.id
-      ORDER BY b.created_at ASC`,
-    now
-  );
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    unitCount: row.unit_count,
-    totalCards: row.total_cards,
-    dueToday: row.due_today,
+  const [{ data: books, error: booksErr }, { data: subjects, error: subjErr }, { data: cards, error: cardsErr }] =
+    await Promise.all([
+      db.from('books').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+      db.from('subjects').select('id, book_id').eq('user_id', userId),
+      db.from('cards').select('subject_id, due_at').eq('user_id', userId).eq('deleted', false),
+    ]);
+  if (booksErr) throw booksErr;
+  if (subjErr) throw subjErr;
+  if (cardsErr) throw cardsErr;
+
+  const subjectToBook = new Map<string, string>();
+  for (const s of subjects ?? []) subjectToBook.set(s.id, s.book_id);
+  const unitCount = new Map<string, number>();
+  for (const s of subjects ?? []) unitCount.set(s.book_id, (unitCount.get(s.book_id) ?? 0) + 1);
+  const totalCards = new Map<string, number>();
+  const dueToday = new Map<string, number>();
+  for (const c of cards ?? []) {
+    const bookId = subjectToBook.get(c.subject_id);
+    if (!bookId) continue;
+    totalCards.set(bookId, (totalCards.get(bookId) ?? 0) + 1);
+    if (c.due_at <= now) dueToday.set(bookId, (dueToday.get(bookId) ?? 0) + 1);
+  }
+
+  return (books ?? []).map((row) => ({
+    ...rowToBook(row),
+    unitCount: unitCount.get(row.id) ?? 0,
+    totalCards: totalCards.get(row.id) ?? 0,
+    dueToday: dueToday.get(row.id) ?? 0,
   }));
 }
 
-export async function createBook(db: SQLiteDatabase, name: string): Promise<Book> {
+export async function createBook(userId: string, name: string): Promise<Book> {
+  const db = requireClient();
   const id = newId();
   const now = new Date().toISOString();
-  await db.runAsync('INSERT INTO books (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)', id, name.trim(), now, now);
+  const { error } = await db
+    .from('books')
+    .insert({ id, user_id: userId, name: name.trim(), created_at: now, updated_at: now });
+  if (error) throw error;
   return { id, name: name.trim(), createdAt: now, updatedAt: now };
 }
 
-export async function ensureBookExists(db: SQLiteDatabase, book: Book): Promise<void> {
-  const existing = await db.getFirstAsync<any>('SELECT id FROM books WHERE id = ?', book.id);
-  if (existing) return;
-  await db.runAsync(
-    'INSERT INTO books (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
-    book.id,
-    book.name,
-    book.createdAt,
-    book.updatedAt
-  );
+export async function getBook(userId: string, bookId: string): Promise<Book | null> {
+  const db = requireClient();
+  const { data, error } = await db.from('books').select('*').eq('user_id', userId).eq('id', bookId).maybeSingle();
+  if (error) throw error;
+  return data ? rowToBook(data) : null;
 }
 
-export async function getAllBooksForSync(db: SQLiteDatabase): Promise<Book[]> {
-  const rows = await db.getAllAsync<any>('SELECT * FROM books ORDER BY created_at ASC');
-  return rows.map((row) => ({ id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at }));
+export async function deleteBook(userId: string, bookId: string): Promise<void> {
+  const db = requireClient();
+  const { data: subjects, error: subjErr } = await db
+    .from('subjects')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('book_id', bookId);
+  if (subjErr) throw subjErr;
+  const subjectIds = (subjects ?? []).map((s) => s.id);
+  if (subjectIds.length > 0) {
+    const { error } = await db.from('cards').delete().eq('user_id', userId).in('subject_id', subjectIds);
+    if (error) throw error;
+  }
+  await db.from('subjects').delete().eq('user_id', userId).eq('book_id', bookId);
+  await db.from('books').delete().eq('user_id', userId).eq('id', bookId);
 }
 
-export async function listSubjects(db: SQLiteDatabase, bookId?: string): Promise<SubjectWithCounts[]> {
+export async function listSubjects(userId: string, bookId?: string): Promise<SubjectWithCounts[]> {
+  const db = requireClient();
   const now = new Date().toISOString();
-  const rows = bookId
-    ? await db.getAllAsync<any>(
-        `SELECT
-            s.id, s.book_id, s.name, s.created_at, s.updated_at,
-            COUNT(c.id) FILTER (WHERE c.deleted = 0) AS total_cards,
-            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today,
-            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.status = 'new') AS new_cards
-          FROM subjects s
-          LEFT JOIN cards c ON c.subject_id = s.id
-          WHERE s.book_id = ?
-          GROUP BY s.id
-          ORDER BY s.created_at ASC`,
-        now,
-        bookId
-      )
-    : await db.getAllAsync<any>(
-        `SELECT
-            s.id, s.book_id, s.name, s.created_at, s.updated_at,
-            COUNT(c.id) FILTER (WHERE c.deleted = 0) AS total_cards,
-            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.due_at <= ?) AS due_today,
-            COUNT(c.id) FILTER (WHERE c.deleted = 0 AND c.status = 'new') AS new_cards
-          FROM subjects s
-          LEFT JOIN cards c ON c.subject_id = s.id
-          GROUP BY s.id
-          ORDER BY s.created_at ASC`,
-        now
-      );
-  return rows.map((row) => ({
-    id: row.id,
-    bookId: row.book_id,
-    name: row.name,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    totalCards: row.total_cards,
-    dueToday: row.due_today,
-    newCards: row.new_cards,
+  let subjectQuery = db.from('subjects').select('*').eq('user_id', userId).order('created_at', { ascending: true });
+  if (bookId) subjectQuery = subjectQuery.eq('book_id', bookId);
+  const [{ data: subjects, error: subjErr }, { data: cards, error: cardsErr }] = await Promise.all([
+    subjectQuery,
+    db.from('cards').select('subject_id, due_at, status').eq('user_id', userId).eq('deleted', false),
+  ]);
+  if (subjErr) throw subjErr;
+  if (cardsErr) throw cardsErr;
+
+  const totalCards = new Map<string, number>();
+  const dueToday = new Map<string, number>();
+  const newCards = new Map<string, number>();
+  for (const c of cards ?? []) {
+    totalCards.set(c.subject_id, (totalCards.get(c.subject_id) ?? 0) + 1);
+    if (c.due_at <= now) dueToday.set(c.subject_id, (dueToday.get(c.subject_id) ?? 0) + 1);
+    if (c.status === 'new') newCards.set(c.subject_id, (newCards.get(c.subject_id) ?? 0) + 1);
+  }
+
+  return (subjects ?? []).map((row) => ({
+    ...rowToSubject(row),
+    totalCards: totalCards.get(row.id) ?? 0,
+    dueToday: dueToday.get(row.id) ?? 0,
+    newCards: newCards.get(row.id) ?? 0,
   }));
 }
 
-export async function getBook(db: SQLiteDatabase, bookId: string): Promise<Book | null> {
-  const row = await db.getFirstAsync<any>('SELECT * FROM books WHERE id = ?', bookId);
-  return row ? { id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at } : null;
+export async function getSubject(userId: string, subjectId: string): Promise<Subject | null> {
+  const db = requireClient();
+  const { data, error } = await db.from('subjects').select('*').eq('user_id', userId).eq('id', subjectId).maybeSingle();
+  if (error) throw error;
+  return data ? rowToSubject(data) : null;
 }
 
-export async function createSubject(db: SQLiteDatabase, bookId: string, name: string): Promise<Subject> {
+export async function createSubject(userId: string, bookId: string, name: string): Promise<Subject> {
+  const db = requireClient();
   const id = newId();
   const now = new Date().toISOString();
-  await db.runAsync(
-    'INSERT INTO subjects (id, book_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    id,
-    bookId,
-    name.trim(),
-    now,
-    now
-  );
+  const { error } = await db
+    .from('subjects')
+    .insert({ id, user_id: userId, book_id: bookId, name: name.trim(), created_at: now, updated_at: now });
+  if (error) throw error;
   return { id, bookId, name: name.trim(), createdAt: now, updatedAt: now };
 }
 
-export async function getSubject(db: SQLiteDatabase, subjectId: string): Promise<Subject | null> {
-  const row = await db.getFirstAsync<any>('SELECT * FROM subjects WHERE id = ?', subjectId);
-  return row ? { id: row.id, bookId: row.book_id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at } : null;
-}
-
-export async function deleteSubject(db: SQLiteDatabase, subjectId: string): Promise<void> {
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM cards WHERE subject_id = ?', subjectId);
-    await db.runAsync('DELETE FROM subjects WHERE id = ?', subjectId);
-  });
-}
-
-export async function deleteBook(db: SQLiteDatabase, bookId: string): Promise<void> {
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM cards WHERE subject_id IN (SELECT id FROM subjects WHERE book_id = ?)', bookId);
-    await db.runAsync('DELETE FROM subjects WHERE book_id = ?', bookId);
-    await db.runAsync('DELETE FROM books WHERE id = ?', bookId);
-  });
+export async function deleteSubject(userId: string, subjectId: string): Promise<void> {
+  const db = requireClient();
+  await db.from('cards').delete().eq('user_id', userId).eq('subject_id', subjectId);
+  await db.from('subjects').delete().eq('user_id', userId).eq('id', subjectId);
 }
 
 export async function createCard(
-  db: SQLiteDatabase,
+  userId: string,
   input: { subjectId: string; question: string; answer: string }
 ): Promise<Card> {
+  const db = requireClient();
   const id = newId();
   const now = new Date().toISOString();
-  await db.runAsync(
-    `INSERT INTO cards
-      (id, subject_id, question, answer, status, interval_days, ease_factor, repetitions, due_at, created_at, updated_at, deleted)
-     VALUES (?, ?, ?, ?, 'new', 0, 2.5, 0, ?, ?, ?, 0)`,
+  const row = {
     id,
-    input.subjectId,
-    input.question.trim(),
-    input.answer.trim(),
-    now,
-    now,
-    now
-  );
-  const row = await db.getFirstAsync<any>('SELECT * FROM cards WHERE id = ?', id);
+    user_id: userId,
+    subject_id: input.subjectId,
+    question: input.question.trim(),
+    answer: input.answer.trim(),
+    status: 'new' as CardStatus,
+    interval_days: 0,
+    ease_factor: 2.5,
+    repetitions: 0,
+    due_at: now,
+    created_at: now,
+    updated_at: now,
+    deleted: false,
+  };
+  const { error } = await db.from('cards').insert(row);
+  if (error) throw error;
   return rowToCard(row);
 }
 
-export async function listCardsBySubject(db: SQLiteDatabase, subjectId: string): Promise<Card[]> {
-  const rows = await db.getAllAsync<any>(
-    'SELECT * FROM cards WHERE subject_id = ? AND deleted = 0 ORDER BY due_at ASC',
-    subjectId
-  );
-  return rows.map(rowToCard);
+export async function listCardsBySubject(userId: string, subjectId: string): Promise<Card[]> {
+  const db = requireClient();
+  const { data, error } = await db
+    .from('cards')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('subject_id', subjectId)
+    .eq('deleted', false)
+    .order('due_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToCard);
 }
 
-export async function getDueCards(db: SQLiteDatabase, limit = 100): Promise<Card[]> {
+export async function getDueCards(userId: string, limit = 100): Promise<Card[]> {
+  const db = requireClient();
   const now = new Date().toISOString();
-  const rows = await db.getAllAsync<any>(
-    'SELECT * FROM cards WHERE deleted = 0 AND due_at <= ? ORDER BY due_at ASC LIMIT ?',
-    now,
-    limit
-  );
-  return rows.map(rowToCard);
+  const { data, error } = await db
+    .from('cards')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('deleted', false)
+    .lte('due_at', now)
+    .order('due_at', { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(rowToCard);
 }
 
 /**
@@ -199,31 +218,35 @@ export async function getDueCards(db: SQLiteDatabase, limit = 100): Promise<Card
  * they want instead of only what's currently due. Optionally scoped to one
  * subject. Ratings still feed the scheduler like a normal review.
  */
-export async function getRevisionCards(db: SQLiteDatabase, subjectId?: string, limit = 200): Promise<Card[]> {
-  const rows = subjectId
-    ? await db.getAllAsync<any>(
-        'SELECT * FROM cards WHERE deleted = 0 AND subject_id = ? ORDER BY due_at ASC LIMIT ?',
-        subjectId,
-        limit
-      )
-    : await db.getAllAsync<any>('SELECT * FROM cards WHERE deleted = 0 ORDER BY due_at ASC LIMIT ?', limit);
-  return rows.map(rowToCard);
+export async function getRevisionCards(userId: string, subjectId?: string, limit = 200): Promise<Card[]> {
+  const db = requireClient();
+  let query = db.from('cards').select('*').eq('user_id', userId).eq('deleted', false);
+  if (subjectId) query = query.eq('subject_id', subjectId);
+  const { data, error } = await query.order('due_at', { ascending: true }).limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(rowToCard);
 }
 
 /**
  * Same as getRevisionCards, but scoped to every unit inside one book
  * rather than a single unit.
  */
-export async function getRevisionCardsByBook(db: SQLiteDatabase, bookId: string, limit = 200): Promise<Card[]> {
-  const rows = await db.getAllAsync<any>(
-    `SELECT c.* FROM cards c
-      JOIN subjects s ON s.id = c.subject_id
-      WHERE c.deleted = 0 AND s.book_id = ?
-      ORDER BY c.due_at ASC LIMIT ?`,
-    bookId,
-    limit
-  );
-  return rows.map(rowToCard);
+export async function getRevisionCardsByBook(userId: string, bookId: string, limit = 200): Promise<Card[]> {
+  const db = requireClient();
+  const { data: subjects, error: subjErr } = await db.from('subjects').select('id').eq('user_id', userId).eq('book_id', bookId);
+  if (subjErr) throw subjErr;
+  const subjectIds = (subjects ?? []).map((s) => s.id);
+  if (subjectIds.length === 0) return [];
+  const { data, error } = await db
+    .from('cards')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('deleted', false)
+    .in('subject_id', subjectIds)
+    .order('due_at', { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(rowToCard);
 }
 
 export interface HomeStats {
@@ -234,7 +257,15 @@ export interface HomeStats {
   mature: number;
 }
 
-export async function getHomeStats(db: SQLiteDatabase): Promise<HomeStats> {
+export async function getHomeStats(userId: string): Promise<HomeStats> {
+  const db = requireClient();
+  const { data, error } = await db
+    .from('cards')
+    .select('status, due_at')
+    .eq('user_id', userId)
+    .eq('deleted', false);
+  if (error) throw error;
+
   const now = new Date();
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
@@ -243,35 +274,20 @@ export async function getHomeStats(db: SQLiteDatabase): Promise<HomeStats> {
   const weekEnd = new Date(todayEnd);
   weekEnd.setDate(weekEnd.getDate() + 7);
 
-  const [dueToday, newCards, dueTomorrow, dueThisWeek, mature] = await Promise.all([
-    db.getFirstAsync<{ n: number }>(
-      "SELECT COUNT(*) as n FROM cards WHERE deleted = 0 AND due_at <= ?",
-      todayEnd.toISOString()
-    ),
-    db.getFirstAsync<{ n: number }>("SELECT COUNT(*) as n FROM cards WHERE deleted = 0 AND status = 'new'"),
-    db.getFirstAsync<{ n: number }>(
-      'SELECT COUNT(*) as n FROM cards WHERE deleted = 0 AND due_at > ? AND due_at <= ?',
-      todayEnd.toISOString(),
-      tomorrowEnd.toISOString()
-    ),
-    db.getFirstAsync<{ n: number }>(
-      'SELECT COUNT(*) as n FROM cards WHERE deleted = 0 AND due_at > ? AND due_at <= ?',
-      todayEnd.toISOString(),
-      weekEnd.toISOString()
-    ),
-    db.getFirstAsync<{ n: number }>("SELECT COUNT(*) as n FROM cards WHERE deleted = 0 AND status = 'mature'"),
-  ]);
-
-  return {
-    dueToday: dueToday?.n ?? 0,
-    newCards: newCards?.n ?? 0,
-    dueTomorrow: dueTomorrow?.n ?? 0,
-    dueThisWeek: dueThisWeek?.n ?? 0,
-    mature: mature?.n ?? 0,
-  };
+  const stats: HomeStats = { dueToday: 0, newCards: 0, dueTomorrow: 0, dueThisWeek: 0, mature: 0 };
+  for (const row of data ?? []) {
+    const dueAt = new Date(row.due_at);
+    if (dueAt <= todayEnd) stats.dueToday++;
+    if (row.status === 'new') stats.newCards++;
+    if (dueAt > todayEnd && dueAt <= tomorrowEnd) stats.dueTomorrow++;
+    if (dueAt > todayEnd && dueAt <= weekEnd) stats.dueThisWeek++;
+    if (row.status === 'mature') stats.mature++;
+  }
+  return stats;
 }
 
-export async function recordReview(db: SQLiteDatabase, card: Card, rating: Rating): Promise<Card> {
+export async function recordReview(userId: string, card: Card, rating: Rating): Promise<Card> {
+  const db = requireClient();
   const result = scheduler.scheduleNextReview({
     status: card.status,
     intervalDays: card.intervalDays,
@@ -281,29 +297,19 @@ export async function recordReview(db: SQLiteDatabase, card: Card, rating: Ratin
   });
   const now = new Date().toISOString();
 
-  await db.withTransactionAsync(async () => {
-    await db.runAsync(
-      `UPDATE cards SET status = ?, interval_days = ?, ease_factor = ?, repetitions = ?, due_at = ?, updated_at = ?
-       WHERE id = ?`,
-      result.status,
-      result.intervalDays,
-      result.easeFactor,
-      result.repetitions,
-      result.dueAt,
-      now,
-      card.id
-    );
-    await db.runAsync(
-      `INSERT INTO reviews (id, card_id, rating, reviewed_at, interval_days_before, interval_days_after)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      newId(),
-      card.id,
-      rating,
-      now,
-      card.intervalDays,
-      result.intervalDays
-    );
-  });
+  const { error } = await db
+    .from('cards')
+    .update({
+      status: result.status,
+      interval_days: result.intervalDays,
+      ease_factor: result.easeFactor,
+      repetitions: result.repetitions,
+      due_at: result.dueAt,
+      updated_at: now,
+    })
+    .eq('user_id', userId)
+    .eq('id', card.id);
+  if (error) throw error;
 
   return {
     ...card,
@@ -316,96 +322,122 @@ export async function recordReview(db: SQLiteDatabase, card: Card, rating: Ratin
   };
 }
 
-export async function deleteCard(db: SQLiteDatabase, cardId: string): Promise<void> {
-  await db.runAsync('UPDATE cards SET deleted = 1, updated_at = ? WHERE id = ?', new Date().toISOString(), cardId);
+export async function deleteCard(userId: string, cardId: string): Promise<void> {
+  const db = requireClient();
+  const { error } = await db
+    .from('cards')
+    .update({ deleted: true, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('id', cardId);
+  if (error) throw error;
 }
 
-export async function getCard(db: SQLiteDatabase, cardId: string): Promise<Card | null> {
-  const row = await db.getFirstAsync<any>('SELECT * FROM cards WHERE id = ?', cardId);
-  return row ? rowToCard(row) : null;
+export async function getCard(userId: string, cardId: string): Promise<Card | null> {
+  const db = requireClient();
+  const { data, error } = await db.from('cards').select('*').eq('user_id', userId).eq('id', cardId).maybeSingle();
+  if (error) throw error;
+  return data ? rowToCard(data) : null;
 }
 
 export async function updateCard(
-  db: SQLiteDatabase,
+  userId: string,
   cardId: string,
   input: { question: string; answer: string }
 ): Promise<void> {
-  await db.runAsync(
-    'UPDATE cards SET question = ?, answer = ?, updated_at = ? WHERE id = ?',
-    input.question.trim(),
-    input.answer.trim(),
-    new Date().toISOString(),
-    cardId
-  );
+  const db = requireClient();
+  const { error } = await db
+    .from('cards')
+    .update({ question: input.question.trim(), answer: input.answer.trim(), updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('id', cardId);
+  if (error) throw error;
 }
 
-export async function getAllCardsForSync(db: SQLiteDatabase): Promise<Card[]> {
-  const rows = await db.getAllAsync<any>('SELECT * FROM cards ORDER BY updated_at ASC');
-  return rows.map(rowToCard);
+export async function getAllBooks(userId: string): Promise<Book[]> {
+  const db = requireClient();
+  const { data, error } = await db.from('books').select('*').eq('user_id', userId).order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToBook);
 }
 
-export async function upsertCardFromRemote(db: SQLiteDatabase, card: Card): Promise<void> {
-  const existing = await db.getFirstAsync<any>('SELECT updated_at FROM cards WHERE id = ?', card.id);
+export async function getAllSubjects(userId: string): Promise<Subject[]> {
+  const db = requireClient();
+  const { data, error } = await db.from('subjects').select('*').eq('user_id', userId).order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToSubject);
+}
+
+export async function getAllCards(userId: string): Promise<Card[]> {
+  const db = requireClient();
+  const { data, error } = await db.from('cards').select('*').eq('user_id', userId).order('updated_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToCard);
+}
+
+/** Inserts if absent; updates only if the incoming row is newer. Used by backup import. */
+export async function upsertBook(userId: string, book: Book): Promise<void> {
+  const db = requireClient();
+  const { data: existing } = await db.from('books').select('updated_at').eq('user_id', userId).eq('id', book.id).maybeSingle();
+  if (existing && new Date(existing.updated_at) >= new Date(book.updatedAt)) return;
+  await db
+    .from('books')
+    .upsert({ id: book.id, user_id: userId, name: book.name, created_at: book.createdAt, updated_at: book.updatedAt });
+}
+
+export async function upsertSubject(userId: string, subject: Subject): Promise<void> {
+  const db = requireClient();
+  const { data: existing } = await db
+    .from('subjects')
+    .select('updated_at')
+    .eq('user_id', userId)
+    .eq('id', subject.id)
+    .maybeSingle();
+  if (existing && new Date(existing.updated_at) >= new Date(subject.updatedAt)) return;
+  await db.from('subjects').upsert({
+    id: subject.id,
+    user_id: userId,
+    book_id: subject.bookId,
+    name: subject.name,
+    created_at: subject.createdAt,
+    updated_at: subject.updatedAt,
+  });
+}
+
+export async function upsertCard(userId: string, card: Card): Promise<void> {
+  const db = requireClient();
+  const { data: existing } = await db.from('cards').select('updated_at').eq('user_id', userId).eq('id', card.id).maybeSingle();
   if (existing && new Date(existing.updated_at) >= new Date(card.updatedAt)) return;
-
-  if (existing) {
-    await db.runAsync(
-      `UPDATE cards SET subject_id = ?, question = ?, answer = ?, status = ?, interval_days = ?, ease_factor = ?,
-        repetitions = ?, due_at = ?, updated_at = ?, deleted = ? WHERE id = ?`,
-      card.subjectId,
-      card.question,
-      card.answer,
-      card.status,
-      card.intervalDays,
-      card.easeFactor,
-      card.repetitions,
-      card.dueAt,
-      card.updatedAt,
-      card.deleted ? 1 : 0,
-      card.id
-    );
-  } else {
-    await db.runAsync(
-      `INSERT INTO cards (id, subject_id, question, answer, status, interval_days, ease_factor, repetitions,
-        due_at, created_at, updated_at, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      card.id,
-      card.subjectId,
-      card.question,
-      card.answer,
-      card.status,
-      card.intervalDays,
-      card.easeFactor,
-      card.repetitions,
-      card.dueAt,
-      card.createdAt,
-      card.updatedAt,
-      card.deleted ? 1 : 0
-    );
-  }
+  await db.from('cards').upsert({
+    id: card.id,
+    user_id: userId,
+    subject_id: card.subjectId,
+    question: card.question,
+    answer: card.answer,
+    status: card.status,
+    interval_days: card.intervalDays,
+    ease_factor: card.easeFactor,
+    repetitions: card.repetitions,
+    due_at: card.dueAt,
+    created_at: card.createdAt,
+    updated_at: card.updatedAt,
+    deleted: card.deleted,
+  });
 }
 
-export async function ensureSubjectExists(db: SQLiteDatabase, subject: Subject): Promise<void> {
-  const existing = await db.getFirstAsync<any>('SELECT id FROM subjects WHERE id = ?', subject.id);
-  if (existing) return;
-  await db.runAsync(
-    'INSERT INTO subjects (id, book_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    subject.id,
-    subject.bookId,
-    subject.name,
-    subject.createdAt,
-    subject.updatedAt
-  );
+export async function getSetting(userId: string, key: string): Promise<string | null> {
+  const db = requireClient();
+  const { data, error } = await db.from('user_settings').select('data').eq('user_id', userId).maybeSingle();
+  if (error) throw error;
+  const value = data?.data?.[key];
+  return typeof value === 'string' ? value : null;
 }
 
-export async function getSetting(db: SQLiteDatabase, key: string): Promise<string | null> {
-  const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key);
-  return row?.value ?? null;
-}
-
-export async function setSetting(db: SQLiteDatabase, key: string, value: string): Promise<void> {
-  await db.runAsync(
-    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-    key,
-    value
-  );
+export async function setSetting(userId: string, key: string, value: string): Promise<void> {
+  const db = requireClient();
+  const { data: existing } = await db.from('user_settings').select('data').eq('user_id', userId).maybeSingle();
+  const nextData = { ...(existing?.data ?? {}), [key]: value };
+  const { error } = await db
+    .from('user_settings')
+    .upsert({ user_id: userId, data: nextData, updated_at: new Date().toISOString() });
+  if (error) throw error;
 }

@@ -1,22 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deleteCard, getCard, updateCard } from '@/db/queries';
-import { pushAll } from '@/lib/sync';
-import { useAuth } from '@/store/auth-context';
+import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const db = useSQLiteContext();
+  const userId = useUserId();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
-  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [question, setQuestion] = useState('');
@@ -25,20 +22,19 @@ export default function EditCardScreen() {
 
   useEffect(() => {
     if (!id) return;
-    getCard(db, id).then((card) => {
+    getCard(userId, id).then((card) => {
       if (card) {
         setQuestion(card.question);
         setAnswer(card.answer);
       }
     });
-  }, [db, id]);
+  }, [userId, id]);
 
   async function handleSave() {
     if (!id || !question.trim() || !answer.trim()) return;
     setSaving(true);
     try {
-      await updateCard(db, id, { question, answer });
-      if (user) pushAll(db, user.id).catch(() => {});
+      await updateCard(userId, id, { question, answer });
       router.back();
     } finally {
       setSaving(false);
@@ -53,8 +49,7 @@ export default function EditCardScreen() {
         text: t('edit.delete'),
         style: 'destructive',
         onPress: async () => {
-          await deleteCard(db, id);
-          if (user) pushAll(db, user.id).catch(() => {});
+          await deleteCard(userId, id);
           router.back();
         },
       },

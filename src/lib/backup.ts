@@ -1,16 +1,8 @@
 import { File, Paths } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
-import type { SQLiteDatabase } from 'expo-sqlite';
 
-import {
-  ensureBookExists,
-  ensureSubjectExists,
-  getAllBooksForSync,
-  getAllCardsForSync,
-  listSubjects,
-  upsertCardFromRemote,
-} from '@/db/queries';
+import { getAllBooks, getAllCards, getAllSubjects, upsertBook, upsertCard, upsertSubject } from '@/db/queries';
 import type { Book, Card, Subject } from '@/types';
 
 const FORMAT_VERSION = 2;
@@ -29,13 +21,13 @@ function timestampForFilename(): string {
 }
 
 /**
- * Writes every subject and card to a JSON file and opens the OS share
- * sheet so the user can save/send it anywhere (Drive, email, Bluetooth,
- * another messaging app, etc.) — enough to move data to a new phone
- * without any backend of our own.
+ * Writes every book/subject/card to a JSON file and opens the OS share
+ * sheet — a manual, portable snapshot of the cloud data (e.g. to move
+ * into a different account, or just keep an offline copy), separate
+ * from the automatic cross-device sync that already happens via Supabase.
  */
-export async function exportBackup(db: SQLiteDatabase): Promise<void> {
-  const [books, subjects, cards] = await Promise.all([getAllBooksForSync(db), listSubjects(db), getAllCardsForSync(db)]);
+export async function exportBackup(userId: string): Promise<void> {
+  const [books, subjects, cards] = await Promise.all([getAllBooks(userId), getAllSubjects(userId), getAllCards(userId)]);
 
   const data: BackupFile = {
     app: 'yodda',
@@ -65,12 +57,12 @@ export interface ImportResult {
 }
 
 /**
- * Lets the user pick a previously exported backup file and merges it in.
- * Upserts are last-write-wins by `updatedAt`, so importing the same file
- * twice (or importing onto a phone that already has some of the same
- * cards) is safe and idempotent.
+ * Lets the user pick a previously exported backup file and merges it into
+ * their account. Upserts are last-write-wins by `updatedAt`, so importing
+ * the same file twice, or onto an account that already has some of the
+ * same cards, is safe and idempotent.
  */
-export async function importBackup(db: SQLiteDatabase): Promise<ImportResult | null> {
+export async function importBackup(userId: string): Promise<ImportResult | null> {
   const picked = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
   if (picked.canceled || !picked.assets[0]) return null;
 
@@ -88,13 +80,13 @@ export async function importBackup(db: SQLiteDatabase): Promise<ImportResult | n
   }
 
   for (const book of data.books ?? []) {
-    await ensureBookExists(db, book);
+    await upsertBook(userId, book);
   }
   for (const subject of data.subjects) {
-    await ensureSubjectExists(db, subject.bookId ? subject : { ...subject, bookId: 'general-book' });
+    await upsertSubject(userId, subject.bookId ? subject : { ...subject, bookId: 'general-book' });
   }
   for (const card of data.cards) {
-    await upsertCardFromRemote(db, card);
+    await upsertCard(userId, card);
   }
 
   return { books: data.books?.length ?? 0, subjects: data.subjects.length, cards: data.cards.length };

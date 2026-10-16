@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getHomeStats, type HomeStats } from '@/db/queries';
+import { useUserId } from '@/store/auth-context';
+import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 
@@ -17,7 +18,8 @@ function greetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'hom
 }
 
 export default function HomeScreen() {
-  const db = useSQLiteContext();
+  const userId = useUserId();
+  const version = useDataVersion();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
@@ -27,13 +29,16 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      getHomeStats(db).then((result) => {
+      getHomeStats(userId).then((result) => {
         if (active) setStats(result);
       });
       return () => {
         active = false;
       };
-    }, [db])
+      // version isn't read here, but bumping it (on a realtime push from
+      // another device) should trigger exactly this refetch.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId, version])
   );
 
   const dueToday = stats?.dueToday ?? 0;

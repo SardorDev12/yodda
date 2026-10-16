@@ -1,8 +1,8 @@
-import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { getSetting, setSetting } from '@/db/queries';
 import { DEFAULT_LANGUAGE, translate, type Language, type TranslationKey } from '@/i18n';
+import { useUserId } from '@/store/auth-context';
 import { darkColors, lightColors, type Scheme, type ThemeColors } from '@/theme';
 
 const LANGUAGE_KEY = 'language';
@@ -27,8 +27,10 @@ interface SettingsContextValue {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
+/** Rendered only once signed in — settings live in Supabase (user_settings
+ * table) keyed by user id, same as every other piece of app data. */
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const db = useSQLiteContext();
+  const userId = useUserId();
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
   const [scheme, setSchemeState] = useState<Scheme>(DEFAULT_SCHEME);
   const [reviewOrder, setReviewOrderState] = useState<ReviewOrder>(DEFAULT_REVIEW_ORDER);
@@ -36,42 +38,41 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getSetting(db, LANGUAGE_KEY), getSetting(db, SCHEME_KEY), getSetting(db, REVIEW_ORDER_KEY)]).then(
-      ([lang, sch, order]) => {
+    Promise.all([getSetting(userId, LANGUAGE_KEY), getSetting(userId, SCHEME_KEY), getSetting(userId, REVIEW_ORDER_KEY)])
+      .then(([lang, sch, order]) => {
         if (!active) return;
         if (lang === 'uz' || lang === 'ru' || lang === 'en') setLanguageState(lang);
         if (sch === 'light' || sch === 'dark') setSchemeState(sch);
         if (order === 'question' || order === 'answer') setReviewOrderState(order);
-        setLoaded(true);
-      }
-    );
+      })
+      .finally(() => active && setLoaded(true));
     return () => {
       active = false;
     };
-  }, [db]);
+  }, [userId]);
 
   const setLanguage = useCallback(
     (next: Language) => {
       setLanguageState(next);
-      setSetting(db, LANGUAGE_KEY, next).catch(() => {});
+      setSetting(userId, LANGUAGE_KEY, next).catch(() => {});
     },
-    [db]
+    [userId]
   );
 
   const setScheme = useCallback(
     (next: Scheme) => {
       setSchemeState(next);
-      setSetting(db, SCHEME_KEY, next).catch(() => {});
+      setSetting(userId, SCHEME_KEY, next).catch(() => {});
     },
-    [db]
+    [userId]
   );
 
   const setReviewOrder = useCallback(
     (next: ReviewOrder) => {
       setReviewOrderState(next);
-      setSetting(db, REVIEW_ORDER_KEY, next).catch(() => {});
+      setSetting(userId, REVIEW_ORDER_KEY, next).catch(() => {});
     },
-    [db]
+    [userId]
   );
 
   const t = useCallback(

@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'assets/**'
-      - 'app.json'
+      - 'app.config.js'
       - 'package.json'
       - '.github/workflows/gh-pages.yml'
   workflow_dispatch:
@@ -32,6 +32,8 @@ jobs:
       - run: npx expo export -p web
         env:
           EXPO_WEB_BASE_URL: /yodda
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

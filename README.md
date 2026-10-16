@@ -6,26 +6,27 @@ Yodda is a minimalist spaced-repetition learning app. Add anything worth
 remembering as a question/answer pair, and Yodda schedules it for review
 using an SM-2-derived algorithm — no configuration required.
 
-All data is **local-first**: everything is stored on-device in SQLite,
-and the app is fully usable offline with no account. Moving to a new
-phone? Settings → Data → **Export data** writes a JSON backup and opens
-the share sheet (save it anywhere — Drive, email, Bluetooth); **Import
-data** on the new device reads that file back in. It's a Yodda-only
-format, not meant for other apps.
+All data lives in **Supabase** (Postgres + Realtime + Auth) and nowhere
+else — there is no local/offline mode. Every screen reads and writes the
+cloud directly, and a realtime subscription keeps every signed-in device
+(phone, tablet, web) in sync within moments of any change, with no manual
+export/import step needed to move between devices. Signing in with an
+email + password is required before the app does anything; see
+[Cloud setup](#cloud-setup-required) below — **without it, the app
+cannot run.**
 
-Optionally, signing in with an email + password (Settings → Account)
-turns on **realtime sync** via Supabase, keeping the same books/units/
-cards/reviews up to date across devices automatically. This is entirely
-off by default (see [Optional sync](#optional-sync) below) — no backend
-calls happen unless a user explicitly signs in.
+A manual JSON export/import still exists in Settings → Data, but it's a
+portable backup/migration tool (e.g. moving into a different account),
+not how data gets from one device to another day-to-day — that's what
+the automatic sync is for.
 
 ## Stack
 
 - **App**: React Native + Expo (SDK 57) + TypeScript, Expo Router for navigation
-- **Storage**: SQLite (`expo-sqlite`), entirely on-device
+- **Data**: Supabase (Postgres + Realtime + Row Level Security), the app's only store — see [Cloud setup](#cloud-setup-required)
+- **Auth**: Supabase email/password, required to use the app
 - **Scheduler**: SM-2-derived, implemented behind a `Scheduler` interface (`src/scheduler`) so it can be swapped for FSRS later without touching callers
 - **Notifications**: `expo-notifications` for a daily review reminder
-- **Optional sync**: Supabase (Postgres + Realtime + Auth), gated entirely behind `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` — see [Optional sync](#optional-sync)
 
 ## Project structure
 
@@ -36,19 +37,34 @@ src/
     subject/[id].tsx Subject detail
     review.tsx        Review flow (modal)
     add.tsx            Add knowledge (modal)
-  db/                SQLite schema + queries
+  db/                Supabase-backed queries (no local database)
   scheduler/         Scheduling algorithm (SM-2 today)
-  lib/               Notifications
+  lib/               Notifications, Supabase client, backup export/import
+  components/        AuthGate (the mandatory sign-in screen) and others
+  store/             Auth, settings, and realtime-refresh React contexts
   types/             Shared types
 ```
 
-## Running it
+## Cloud setup (required)
 
-This app was built entirely in a cloud session with no local device
-available, so it has **not** been visually verified in a simulator or
-browser yet. It has been verified to typecheck (`tsc --noEmit`), lint
-clean (`expo lint`), and successfully export a static web build
-(`expo export -p web`) covering every screen/route.
+The app has no local database — these steps are not optional, unlike an
+earlier version of this project where sync was opt-in:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In its SQL editor, run `supabase/schema.sql` from this repo (creates
+   `books`/`subjects`/`cards`/`user_settings` tables, row-level security,
+   and enables Realtime on the content tables).
+3. Copy `.env.example` to `.env` and fill in your project's URL and anon
+   key (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`).
+4. Build the app (`npx expo start`, or a full `eas build` for a store
+   release — these are build-time env vars, so they must be set wherever
+   the build actually runs, including CI).
+
+Without those env vars, `isSupabaseConfigured` is `false` and the app
+shows a "cloud sync not configured" screen instead of starting — there's
+nothing else for it to fall back to.
+
+## Running it
 
 ```bash
 npm install
@@ -65,31 +81,24 @@ npx eas-cli@latest build --platform android
 See [Publishing](#publishing) below for the full path from here to the
 App Store / Play Store.
 
-### Web caveat
-
-`expo-sqlite`'s web backend uses WebAssembly (wa-sqlite) and needs
-`Cross-Origin-Opener-Policy: same-origin` / `Cross-Origin-Embedder-Policy:
-require-corp` response headers to work at runtime in a browser. The
-bundler config for this (`metro.config.js`) is in place and the static
-export builds successfully, but if you serve `expo start --web` locally
-and the database fails to open, add those headers via your dev-server or
-hosting config.
-
 ### Deploying the web build to GitHub Pages
 
-`app.json`'s `expo.experiments.baseUrl` is set to `/yodda` so the static
-export's asset paths (`/yodda/_expo/...`) resolve correctly when served
-from a repo subpath like `https://<user>.github.io/yodda/`, instead of
-the root-relative paths (`/_expo/...`) Expo emits by default. If you fork
-this repo under a different name, update `baseUrl` to match.
+`app.config.js`'s `expo.experiments.baseUrl` is driven by an
+`EXPO_WEB_BASE_URL` env var at export time, so the same codebase can
+target both a GitHub Pages repo subpath (set to `/yodda`, matching this
+repo's name) and a root-hosted platform like Cloudflare Pages (left
+unset, giving root-relative asset paths). If you fork this repo under a
+different name, update the value the GitHub Pages workflow passes.
 `public/.nojekyll` is also required — GitHub Pages' Jekyll processing
 otherwise drops the `_expo` directory (leading underscore).
 
 `.github/workflows/gh-pages.yml` builds and publishes `dist/` to GitHub
 Pages automatically on every push to `main` that touches app code (or via
-"Run workflow" on demand). One-time setup: repo **Settings → Pages →
-Source → GitHub Actions**. After that, the site stays in sync with `main`
-with no further manual steps.
+"Run workflow" on demand), using the `EXPO_PUBLIC_SUPABASE_URL`/
+`EXPO_PUBLIC_SUPABASE_ANON_KEY` repository secrets — the deployed site
+needs real credentials to do anything past the sign-in screen. One-time
+setup: repo **Settings → Pages → Source → GitHub Actions**, plus adding
+those two secrets under **Settings → Secrets and variables → Actions**.
 
 ## Scheduler
 
@@ -115,12 +124,19 @@ accounts and an interactive login, so it's manual:
    ```
 
 3. **Link this project to your Expo account** (writes an `extra.eas.projectId`
-   into `app.json` — don't hand-edit that field):
+   into `app.config.js` — don't hand-edit that field):
    ```bash
    npx eas-cli@latest build:configure
    ```
 
-4. **First production builds:**
+4. **Set the Supabase env vars for EAS builds** (see
+   [Cloud setup](#cloud-setup-required)) — on
+   [expo.dev](https://expo.dev), your project → **Environment variables**
+   → add `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+   for the build profiles you use. A build made without these will show
+   the "cloud sync not configured" screen to every user.
+
+5. **First production builds:**
    ```bash
    npx eas-cli@latest build --platform ios --profile production
    npx eas-cli@latest build --platform android --profile production
@@ -129,7 +145,7 @@ accounts and an interactive login, so it's manual:
    them unless you already have certificates. This produces a `.ipa` and an
    `.aab` you can download from the EAS dashboard.
 
-5. **Submit:**
+6. **Submit:**
    ```bash
    npx eas-cli@latest submit --platform ios
    npx eas-cli@latest submit --platform android
@@ -141,23 +157,24 @@ accounts and an interactive login, so it's manual:
    Console instead of `eas submit`, if you'd rather not create those service
    credentials.
 
-6. **Store listing, for both stores:**
+7. **Store listing, for both stores:**
    - Screenshots (a few required device sizes each — `assets/appicon.png` and
      screenshots from `expo start --web` or a simulator work for this)
    - Short + long description
-   - **Privacy policy URL** — required even though Yodda stores nothing
-     remotely; a one-line hosted page ("Yodda does not collect or transmit
-     any data; everything stays on your device.") satisfies this
-   - Play Store also requires a content rating questionnaire and a Data
-     Safety form — answer "no data collected" throughout, since that's true
+   - **Privacy policy URL** — `docs/privacy.html` in this repo (hosted via
+     GitHub Pages) discloses the account/email + content data collection;
+     update it if your deployment differs
+   - Play Store's **Data Safety** form needs real answers now: this app
+     collects an email address (authentication) and user-generated content
+     (the cards/books/reviews you create), both required to use the app at
+     all — answer accordingly, not "no data collected"
 
-7. **Review**: Apple review is typically 1–3 days; Google's is usually
-   faster. Once approved, both stores handle distribution — no further
-   infrastructure needed since the app has no backend.
+8. **Review**: Apple review is typically 1–3 days; Google's is usually
+   faster.
 
 ## OTA updates (EAS Update)
 
-`expo-updates` is installed and configured (`app.json`'s `updates.url` +
+`expo-updates` is installed and configured (`app.config.js`'s `updates.url` +
 `runtimeVersion: { policy: "appVersion" }`, and a `channel` per build
 profile in `eas.json`). This means **JS/asset-only changes** — new
 screens, copy, translations, most bug fixes — can ship instantly to
@@ -173,42 +190,15 @@ same `EXPO_TOKEN` secret as the build workflow) — pick a channel and it
 publishes.
 
 **This does not replace native builds.** Anything touching native code
-or config — new native dependencies, `app.json` permissions/icons/plugins,
+or config — new native dependencies, `app.config.js` permissions/icons/plugins,
 upgrading the Expo SDK — still needs a full `eas build` and, for
 already-published apps, a new store submission. `runtimeVersion` is tied
-to `version` in `app.json`: as long as that doesn't change, installed
+to `version` in `app.config.js`: as long as that doesn't change, installed
 builds keep pulling OTA updates from their channel; bumping it (as you
 would for a new store release) requires a matching new build before
 updates apply again.
-
-## Optional sync
-
-Yodda stays local-only unless you set up Supabase and sign in:
-
-1. Create a free project at [supabase.com](https://supabase.com).
-2. In its SQL editor, run `supabase/schema.sql` from this repo (creates
-   `books`/`subjects`/`cards` tables, row-level security, and enables
-   Realtime on them).
-3. Copy `.env.example` to `.env` and fill in your project's URL and anon
-   key (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`).
-4. Rebuild the app (see below — this needs a full native build, not OTA).
-
-With those env vars unset (the default), `isSupabaseConfigured` is
-`false`, the Account section in Settings disappears, and no network
-calls to Supabase are made — existing behavior is unchanged.
-
-**This requires a full native build, not an OTA update.** Email/password
-auth added two native modules (`@react-native-async-storage/async-storage`,
-`react-native-url-polyfill`), so an app already installed from the store
-needs a new `eas build` + submission before sync is available — an
-`eas update` alone will not add it. If sync is enabled before shipping to
-Google Play, update the Play Console **Data Safety** form: it previously
-declared "no data collected," which is no longer accurate once an
-optional account feature collects email + user content.
 
 ## What's intentionally not built yet
 
 Per the product plan, the MVP stays deliberately small: no AI card
 generation, no PDF/article import, no gamification, no social features.
-Cloud sync is now available as an opt-in account feature (see above);
-everything else stays a natural future addition once validated.

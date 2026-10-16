@@ -1,25 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
 import { createSubject, deleteBook, getBook, listSubjects } from '@/db/queries';
-import { pushAll } from '@/lib/sync';
-import { useAuth } from '@/store/auth-context';
+import { useUserId } from '@/store/auth-context';
+import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Book, SubjectWithCounts } from '@/types';
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const db = useSQLiteContext();
+  const userId = useUserId();
+  const version = useDataVersion();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
-  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [book, setBook] = useState<Book | null>(null);
   const [units, setUnits] = useState<SubjectWithCounts[]>([]);
@@ -27,30 +26,30 @@ export default function BookDetailScreen() {
   const [newUnitName, setNewUnitName] = useState('');
 
   const loadUnits = useCallback(() => {
-    if (id) listSubjects(db, id).then(setUnits);
-  }, [db, id]);
+    if (id) listSubjects(userId, id).then(setUnits);
+  }, [userId, id]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       if (id) {
-        getBook(db, id).then((b) => active && setBook(b));
-        listSubjects(db, id).then((list) => active && setUnits(list));
+        getBook(userId, id).then((b) => active && setBook(b));
+        listSubjects(userId, id).then((list) => active && setUnits(list));
       }
       return () => {
         active = false;
       };
-    }, [db, id])
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- version triggers a refetch on realtime pushes
+    }, [userId, id, version])
   );
 
   async function handleCreateUnit() {
     const name = newUnitName.trim();
     if (!name || !id) return;
-    await createSubject(db, id, name);
+    await createSubject(userId, id, name);
     setNewUnitName('');
     setAddingUnit(false);
     loadUnits();
-    if (user) pushAll(db, user.id).catch(() => {});
   }
 
   function handleDeleteBook() {
@@ -61,8 +60,7 @@ export default function BookDetailScreen() {
         text: t('library.deleteBook'),
         style: 'destructive',
         onPress: async () => {
-          await deleteBook(db, id);
-          if (user) pushAll(db, user.id).catch(() => {});
+          await deleteBook(userId, id);
           router.back();
         },
       },

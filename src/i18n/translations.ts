@@ -88,10 +88,7 @@ export const en = {
   'settings.reminderHours': 'At what time',
   'settings.webHint': "Local notifications aren't available on web.",
   'settings.data': 'Data',
-  'settings.dataText':
-    'Data is stored on this device. Moving to a new phone? Use export / import.',
-  'settings.dataTextSync':
-    'Data is stored on this device. Moving to a new phone? Use export / import, or sign in to sync automatically.',
+  'settings.dataTextSync': 'Your data lives in the cloud and stays in sync across every device you sign in on.',
   'settings.exportButton': 'Export data',
   'settings.exporting': 'Exporting…',
   'settings.exportError': "Couldn't export your data. Please try again.",
@@ -116,6 +113,8 @@ export const en = {
   'auth.pleaseWait': 'Please wait…',
   'auth.switchToSignUp': "Don't have an account? Sign up",
   'auth.switchToSignIn': 'Already have an account? Sign in',
+  'config.title': 'Cloud sync not configured',
+  'config.body': 'This build is missing its Supabase configuration, so it has no data store to connect to.',
 
   'settings.about': 'About',
   'settings.aboutText': 'Yodda · Learn once. Remember longer.',
@@ -245,9 +244,7 @@ export const ru: Record<TranslationKey, string> = {
   'settings.reminderHours': 'В какое время',
   'settings.webHint': 'Локальные уведомления недоступны в вебе.',
   'settings.data': 'Данные',
-  'settings.dataText': 'Данные хранятся на этом устройстве. Переходите на новый телефон? Используйте экспорт / импорт.',
-  'settings.dataTextSync':
-    'Данные хранятся на этом устройстве. Переходите на новый телефон? Используйте экспорт / импорт или войдите в аккаунт для автоматической синхронизации.',
+  'settings.dataTextSync': 'Ваши данные хранятся в облаке и синхронизируются на всех устройствах, где вы вошли в аккаунт.',
   'settings.exportButton': 'Экспорт данных',
   'settings.exporting': 'Экспортируется…',
   'settings.exportError': 'Не удалось экспортировать данные. Попробуйте снова.',
@@ -272,6 +269,8 @@ export const ru: Record<TranslationKey, string> = {
   'auth.pleaseWait': 'Подождите…',
   'auth.switchToSignUp': 'Нет аккаунта? Зарегистрироваться',
   'auth.switchToSignIn': 'Уже есть аккаунт? Войти',
+  'config.title': 'Облачная синхронизация не настроена',
+  'config.body': 'В этой сборке не настроен Supabase, поэтому подключиться не к чему.',
 
   'settings.about': 'О приложении',
   'settings.aboutText': 'Yodda · Учи один раз. Помни дольше.',
@@ -399,10 +398,7 @@ export const uz: Record<TranslationKey, string> = {
   'settings.reminderHours': 'Qaysi vaqtda',
   'settings.webHint': "Lokal bildirishnomalar veb-brauzerda ishlamaydi.",
   'settings.data': "Ma'lumotlar",
-  'settings.dataText':
-    "Ma'lumotlar qurilmada saqlanmoqda. Boshqa qurilmaga o'tishda, eksport / import funksiyalaridan foydalaning.",
-  'settings.dataTextSync':
-    "Ma'lumotlar qurilmada saqlanmoqda. Boshqa qurilmaga o'tishda, eksport / import funksiyalaridan foydalaning yoki hisobga kiring — avtomatik sinxronlanadi.",
+  'settings.dataTextSync': "Ma'lumotlaringiz bulutda saqlanadi va hisobga kirgan har bir qurilmada sinxronlanadi.",
   'settings.exportButton': 'Ma\'lumotlarni eksport qilish',
   'settings.exporting': 'Eksport qilinmoqda…',
   'settings.exportError': "Ma'lumotlarni eksport qilib bo'lmadi. Qayta urinib ko'ring.",
@@ -427,6 +423,8 @@ export const uz: Record<TranslationKey, string> = {
   'auth.pleaseWait': 'Kuting…',
   'auth.switchToSignUp': "Hisobingiz yo'qmi? Ro'yxatdan o'ting",
   'auth.switchToSignIn': 'Hisobingiz bormi? Kiring',
+  'config.title': 'Bulutli sinxronizatsiya sozlanmagan',
+  'config.body': "Ushbu build'da Supabase sozlanmagan, shuning uchun ulanadigan joy yo'q.",
 
   'settings.about': 'Ilova haqida',
   'settings.aboutText': "Yodda · Bir marta o'rgan. Uzoqroq esda saqla.",

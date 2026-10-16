@@ -25,7 +25,6 @@ module.exports = {
     },
     plugins: [
       'expo-router',
-      'expo-sqlite',
       'expo-system-ui',
       [
         'expo-splash-screen',

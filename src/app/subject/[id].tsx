@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
@@ -17,8 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RowMenu } from '@/components/RowMenu';
 import { createCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
-import { pushAll } from '@/lib/sync';
-import { useAuth } from '@/store/auth-context';
+import { useUserId } from '@/store/auth-context';
+import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type ThemeColors } from '@/theme';
 import type { Card, CardStatus, Subject } from '@/types';
@@ -26,10 +25,10 @@ import type { Card, CardStatus, Subject } from '@/types';
 export default function SubjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const db = useSQLiteContext();
+  const userId = useUserId();
+  const version = useDataVersion();
   const insets = useSafeAreaInsets();
   const { colors, t } = useSettings();
-  const { user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const STATUS_LABEL: Record<CardStatus, string> = {
     new: t('status.new'),
@@ -45,32 +44,32 @@ export default function SubjectDetailScreen() {
   const [saving, setSaving] = useState(false);
 
   const loadCards = useCallback(() => {
-    if (id) listCardsBySubject(db, id).then(setCards);
-  }, [db, id]);
+    if (id) listCardsBySubject(userId, id).then(setCards);
+  }, [userId, id]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       if (id) {
-        getSubject(db, id).then((s) => active && setSubject(s));
-        listCardsBySubject(db, id).then((list) => active && setCards(list));
+        getSubject(userId, id).then((s) => active && setSubject(s));
+        listCardsBySubject(userId, id).then((list) => active && setCards(list));
       }
       return () => {
         active = false;
       };
-    }, [db, id])
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- version triggers a refetch on realtime pushes
+    }, [userId, id, version])
   );
 
   async function handleCreateCard() {
     if (!id || !question.trim() || !answer.trim()) return;
     setSaving(true);
     try {
-      await createCard(db, { subjectId: id, question, answer });
+      await createCard(userId, { subjectId: id, question, answer });
       setQuestion('');
       setAnswer('');
       setAddingCard(false);
       loadCards();
-      if (user) pushAll(db, user.id).catch(() => {});
     } finally {
       setSaving(false);
     }
@@ -84,8 +83,7 @@ export default function SubjectDetailScreen() {
         text: t('book.deleteUnit'),
         style: 'destructive',
         onPress: async () => {
-          await deleteSubject(db, id);
-          if (user) pushAll(db, user.id).catch(() => {});
+          await deleteSubject(userId, id);
           router.back();
         },
       },

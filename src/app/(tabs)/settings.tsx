@@ -2,13 +2,12 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSQLiteContext } from 'expo-sqlite';
 
 import { getSetting, setSetting } from '@/db/queries';
 import { LANGUAGES, type Language } from '@/i18n';
 import { exportBackup, importBackup } from '@/lib/backup';
 import { isWeb, MAX_REMINDERS, startReminderChecks, stopReminderChecks } from '@/lib/notifications';
-import { useAuth } from '@/store/auth-context';
+import { useAuth, useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing, type Scheme, type ThemeColors } from '@/theme';
 
@@ -27,10 +26,10 @@ function formatHour(hour: number): string {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const db = useSQLiteContext();
+  const userId = useUserId();
   const insets = useSafeAreaInsets();
   const { colors, language, reviewOrder, scheme, setLanguage, setReviewOrder, setScheme, t } = useSettings();
-  const { isConfigured: syncConfigured, loading: authLoading, signOut, user } = useAuth();
+  const { signOut, user } = useAuth();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [remindersOn, setRemindersOn] = useState(false);
@@ -41,7 +40,7 @@ export default function SettingsScreen() {
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    Promise.all([getSetting(db, 'notifOn'), getSetting(db, 'notifCount'), getSetting(db, 'notifHours')]).then(
+    Promise.all([getSetting(userId, 'notifOn'), getSetting(userId, 'notifCount'), getSetting(userId, 'notifHours')]).then(
       ([onValue, countValue, hoursValue]) => {
         const count = countValue ? Math.min(MAX_REMINDERS, Math.max(1, parseInt(countValue, 10))) : 1;
         const hours = hoursValue ? (JSON.parse(hoursValue) as number[]) : DEFAULT_HOURS.slice(0, count);
@@ -50,13 +49,13 @@ export default function SettingsScreen() {
         setReminderHours(hours);
       }
     );
-  }, [db]);
+  }, [userId]);
 
   async function persistAndSchedule(on: boolean, count: number, hours: number[]) {
     await Promise.all([
-      setSetting(db, 'notifOn', on ? '1' : '0'),
-      setSetting(db, 'notifCount', String(count)),
-      setSetting(db, 'notifHours', JSON.stringify(hours)),
+      setSetting(userId, 'notifOn', on ? '1' : '0'),
+      setSetting(userId, 'notifCount', String(count)),
+      setSetting(userId, 'notifHours', JSON.stringify(hours)),
     ]);
     if (isWeb) return;
     if (on) {
@@ -75,21 +74,21 @@ export default function SettingsScreen() {
     const hours = Array.from({ length: count }, (_, i) => reminderHours[i] ?? DEFAULT_HOURS[i] ?? 9);
     setReminderCount(count);
     setReminderHours(hours);
-    await setSetting(db, 'notifCount', String(count));
-    await setSetting(db, 'notifHours', JSON.stringify(hours));
+    await setSetting(userId, 'notifCount', String(count));
+    await setSetting(userId, 'notifHours', JSON.stringify(hours));
   }
 
   async function changeHour(slot: number, hour: number) {
     const hours = reminderHours.map((h, i) => (i === slot ? hour : h));
     setReminderHours(hours);
     setPickerSlot(null);
-    await setSetting(db, 'notifHours', JSON.stringify(hours));
+    await setSetting(userId, 'notifHours', JSON.stringify(hours));
   }
 
   async function handleExport() {
     setExporting(true);
     try {
-      await exportBackup(db);
+      await exportBackup(userId);
     } catch {
       Alert.alert(t('settings.exportButton'), t('settings.exportError'));
     } finally {
@@ -100,7 +99,7 @@ export default function SettingsScreen() {
   async function handleImport() {
     setImporting(true);
     try {
-      const result = await importBackup(db);
+      const result = await importBackup(userId);
       if (result) {
         Alert.alert(t('settings.importButton'), t('settings.importSuccess', { subjects: result.subjects, cards: result.cards }));
       }
@@ -209,7 +208,7 @@ export default function SettingsScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.data')}</Text>
-        <Text style={styles.hint}>{t(syncConfigured ? 'settings.dataTextSync' : 'settings.dataText')}</Text>
+        <Text style={styles.hint}>{t('settings.dataTextSync')}</Text>
 
         {!isWeb && (
           <View style={styles.backupRow}>
@@ -223,26 +222,13 @@ export default function SettingsScreen() {
         )}
       </View>
 
-      {syncConfigured && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
-          {user ? (
-            <>
-              <Text style={styles.rowLabel}>{t('settings.signedInAs', { email: user.email ?? '' })}</Text>
-              <Pressable style={styles.backupButton} onPress={signOut}>
-                <Text style={styles.backupButtonText}>{t('settings.signOut')}</Text>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <Text style={styles.hint}>{t('settings.syncHint')}</Text>
-              <Pressable style={styles.backupButton} onPress={() => router.push('/login')} disabled={authLoading}>
-                <Text style={styles.backupButtonText}>{authLoading ? t('settings.syncing') : t('settings.signIn')}</Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-      )}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
+        <Text style={styles.rowLabel}>{t('settings.signedInAs', { email: user?.email ?? '' })}</Text>
+        <Pressable style={styles.backupButton} onPress={signOut}>
+          <Text style={styles.backupButtonText}>{t('settings.signOut')}</Text>
+        </Pressable>
+      </View>
 
       <Pressable style={styles.section} onPress={() => router.push('/about')}>
         <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
