@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthGate } from '@/components/AuthGate';
+import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { DEFAULT_LANGUAGE, translate } from '@/i18n';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { syncAndroidChrome } from '@/lib/navigation-bar';
@@ -46,6 +47,7 @@ function Navigator() {
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <UpdatePrompt />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
