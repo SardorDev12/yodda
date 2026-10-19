@@ -5,6 +5,7 @@ import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -32,6 +33,8 @@ export default function BookDetailScreen() {
   const [error, setError] = useState(false);
   const [renamingBook, setRenamingBook] = useState(false);
   const [renamingUnit, setRenamingUnit] = useState<SubjectWithCounts | null>(null);
+  const [deletingBook, setDeletingBook] = useState(false);
+  const [deletingUnit, setDeletingUnit] = useState<SubjectWithCounts | null>(null);
 
   const load = useCallback(() => {
     if (!id) return;
@@ -68,23 +71,14 @@ export default function BookDetailScreen() {
     }
   }
 
-  function handleDeleteBook() {
+  async function confirmDeleteBook() {
     if (!id) return;
-    Alert.alert(t('library.deleteBookConfirmTitle'), t('library.deleteBookConfirmBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('library.deleteBook'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteBook(userId, id);
-            router.back();
-          } catch {
-            Alert.alert(t('library.deleteBook'), t('common.loadError'));
-          }
-        },
-      },
-    ]);
+    try {
+      await deleteBook(userId, id);
+      router.back();
+    } catch {
+      Alert.alert(t('library.deleteBook'), t('common.loadError'));
+    }
   }
 
   async function handleRenameBook(name: string) {
@@ -98,22 +92,15 @@ export default function BookDetailScreen() {
     }
   }
 
-  function handleDeleteUnit(unit: SubjectWithCounts) {
-    Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('book.deleteUnit'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteSubject(userId, unit.id);
-            load();
-          } catch {
-            Alert.alert(t('book.deleteUnit'), t('common.loadError'));
-          }
-        },
-      },
-    ]);
+  async function confirmDeleteUnit() {
+    if (!deletingUnit) return;
+    try {
+      await deleteSubject(userId, deletingUnit.id);
+      setDeletingUnit(null);
+      load();
+    } catch {
+      Alert.alert(t('book.deleteUnit'), t('common.loadError'));
+    }
   }
 
   async function handleRenameUnit(name: string) {
@@ -143,7 +130,7 @@ export default function BookDetailScreen() {
                 label: t('library.deleteBook'),
                 icon: 'trash-outline',
                 destructive: true,
-                onPress: handleDeleteBook,
+                onPress: () => setDeletingBook(true),
               },
             ]}
           />
@@ -219,7 +206,7 @@ export default function BookDetailScreen() {
                     label: t('book.deleteUnit'),
                     icon: 'trash-outline',
                     destructive: true,
-                    onPress: () => handleDeleteUnit(item),
+                    onPress: () => setDeletingUnit(item),
                   },
                 ]}
               />
@@ -243,6 +230,22 @@ export default function BookDetailScreen() {
         placeholder={t('book.unitNamePlaceholder')}
         onCancel={() => setRenamingUnit(null)}
         onSave={handleRenameUnit}
+      />
+      <ConfirmModal
+        visible={deletingBook}
+        title={t('library.deleteBookConfirmTitle')}
+        body={t('library.deleteBookConfirmBody')}
+        confirmLabel={t('library.deleteBook')}
+        onCancel={() => setDeletingBook(false)}
+        onConfirm={confirmDeleteBook}
+      />
+      <ConfirmModal
+        visible={!!deletingUnit}
+        title={t('book.deleteUnitConfirmTitle')}
+        body={t('book.deleteUnitConfirmBody')}
+        confirmLabel={t('book.deleteUnit')}
+        onCancel={() => setDeletingUnit(null)}
+        onConfirm={confirmDeleteUnit}
       />
     </KeyboardAvoidingView>
   );

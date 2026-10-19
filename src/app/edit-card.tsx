@@ -4,6 +4,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LoadingState } from '@/components/CenterState';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { deleteCard, getCard, updateCard } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useSettings } from '@/store/settings-context';
@@ -21,6 +22,7 @@ export default function EditCardScreen() {
   const [answer, setAnswer] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -48,23 +50,14 @@ export default function EditCardScreen() {
     }
   }
 
-  function handleDelete() {
+  async function confirmDelete() {
     if (!id) return;
-    Alert.alert(t('edit.deleteConfirmTitle'), t('edit.deleteConfirmBody'), [
-      { text: t('edit.cancel'), style: 'cancel' },
-      {
-        text: t('edit.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteCard(userId, id);
-            router.back();
-          } catch {
-            Alert.alert(t('edit.delete'), t('common.loadError'));
-          }
-        },
-      },
-    ]);
+    try {
+      await deleteCard(userId, id);
+      router.back();
+    } catch {
+      Alert.alert(t('edit.delete'), t('common.loadError'));
+    }
   }
 
   const canSave = question.trim().length > 0 && answer.trim().length > 0;
@@ -97,7 +90,7 @@ export default function EditCardScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.deleteButton, pressed && styles.pressedDim]}
-          onPress={handleDelete}
+          onPress={() => setDeleting(true)}
         >
           <Text style={styles.deleteButtonText}>{t('edit.delete')}</Text>
         </Pressable>
@@ -110,6 +103,14 @@ export default function EditCardScreen() {
           <Text style={styles.saveButtonText}>{saving ? t('edit.saving') : t('edit.save')}</Text>
         </Pressable>
       </ScrollView>
+      <ConfirmModal
+        visible={deleting}
+        title={t('edit.deleteConfirmTitle')}
+        body={t('edit.deleteConfirmBody')}
+        confirmLabel={t('edit.delete')}
+        onCancel={() => setDeleting(false)}
+        onConfirm={confirmDelete}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -48,6 +49,7 @@ export default function SubjectDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadCards = useCallback(() => {
     if (id) return listCardsBySubject(userId, id).then(setCards);
@@ -88,23 +90,14 @@ export default function SubjectDetailScreen() {
     }
   }
 
-  function handleDeleteUnit() {
+  async function confirmDeleteUnit() {
     if (!id) return;
-    Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('book.deleteUnit'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteSubject(userId, id);
-            router.back();
-          } catch {
-            Alert.alert(t('book.deleteUnit'), t('common.loadError'));
-          }
-        },
-      },
-    ]);
+    try {
+      await deleteSubject(userId, id);
+      router.back();
+    } catch {
+      Alert.alert(t('book.deleteUnit'), t('common.loadError'));
+    }
   }
 
   async function handleRename(name: string) {
@@ -134,7 +127,7 @@ export default function SubjectDetailScreen() {
                 label: t('book.deleteUnit'),
                 icon: 'trash-outline',
                 destructive: true,
-                onPress: handleDeleteUnit,
+                onPress: () => setDeleting(true),
               },
             ]}
           />
@@ -222,6 +215,14 @@ export default function SubjectDetailScreen() {
         placeholder={t('book.unitNamePlaceholder')}
         onCancel={() => setRenaming(false)}
         onSave={handleRename}
+      />
+      <ConfirmModal
+        visible={deleting}
+        title={t('book.deleteUnitConfirmTitle')}
+        body={t('book.deleteUnitConfirmBody')}
+        confirmLabel={t('book.deleteUnit')}
+        onCancel={() => setDeleting(false)}
+        onConfirm={confirmDeleteUnit}
       />
     </KeyboardAvoidingView>
   );

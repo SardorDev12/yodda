@@ -5,6 +5,7 @@ import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
 import { createBook, deleteBook, listBooks, updateBook } from '@/db/queries';
@@ -28,6 +29,7 @@ export default function LibraryScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [renamingBook, setRenamingBook] = useState<BookWithCounts | null>(null);
+  const [deletingBook, setDeletingBook] = useState<BookWithCounts | null>(null);
 
   const loadBooks = useCallback(() => {
     return listBooks(userId)
@@ -62,22 +64,15 @@ export default function LibraryScreen() {
     }
   }
 
-  function handleDeleteBook(book: BookWithCounts) {
-    Alert.alert(t('library.deleteBookConfirmTitle'), t('library.deleteBookConfirmBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('library.deleteBook'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteBook(userId, book.id);
-            await loadBooks();
-          } catch {
-            Alert.alert(t('library.deleteBook'), t('common.loadError'));
-          }
-        },
-      },
-    ]);
+  async function confirmDeleteBook() {
+    if (!deletingBook) return;
+    try {
+      await deleteBook(userId, deletingBook.id);
+      setDeletingBook(null);
+      await loadBooks();
+    } catch {
+      Alert.alert(t('library.deleteBook'), t('common.loadError'));
+    }
   }
 
   async function handleRenameBook(name: string) {
@@ -156,7 +151,7 @@ export default function LibraryScreen() {
                     label: t('library.deleteBook'),
                     icon: 'trash-outline',
                     destructive: true,
-                    onPress: () => handleDeleteBook(item),
+                    onPress: () => setDeletingBook(item),
                   },
                 ]}
               />
@@ -172,6 +167,14 @@ export default function LibraryScreen() {
         placeholder={t('library.bookNamePlaceholder')}
         onCancel={() => setRenamingBook(null)}
         onSave={handleRenameBook}
+      />
+      <ConfirmModal
+        visible={!!deletingBook}
+        title={t('library.deleteBookConfirmTitle')}
+        body={t('library.deleteBookConfirmBody')}
+        confirmLabel={t('library.deleteBook')}
+        onCancel={() => setDeletingBook(null)}
+        onConfirm={confirmDeleteBook}
       />
     </KeyboardAvoidingView>
   );
