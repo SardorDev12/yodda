@@ -40,15 +40,17 @@ export default function SettingsScreen() {
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    Promise.all([getSetting(userId, 'notifOn'), getSetting(userId, 'notifCount'), getSetting(userId, 'notifHours')]).then(
-      ([onValue, countValue, hoursValue]) => {
+    Promise.all([getSetting(userId, 'notifOn'), getSetting(userId, 'notifCount'), getSetting(userId, 'notifHours')])
+      .then(([onValue, countValue, hoursValue]) => {
         const count = countValue ? Math.min(MAX_REMINDERS, Math.max(1, parseInt(countValue, 10))) : 1;
         const hours = hoursValue ? (JSON.parse(hoursValue) as number[]) : DEFAULT_HOURS.slice(0, count);
         setRemindersOn(onValue === '1');
         setReminderCount(count);
         setReminderHours(hours);
-      }
-    );
+      })
+      .catch(() => {
+        // Falls back to the defaults already in state.
+      });
   }, [userId]);
 
   async function persistAndSchedule(on: boolean, count: number, hours: number[]) {
@@ -56,7 +58,7 @@ export default function SettingsScreen() {
       setSetting(userId, 'notifOn', on ? '1' : '0'),
       setSetting(userId, 'notifCount', String(count)),
       setSetting(userId, 'notifHours', JSON.stringify(hours)),
-    ]);
+    ]).catch(() => {});
     if (isWeb) return;
     if (on) {
       await startReminderChecks();
@@ -74,15 +76,15 @@ export default function SettingsScreen() {
     const hours = Array.from({ length: count }, (_, i) => reminderHours[i] ?? DEFAULT_HOURS[i] ?? 9);
     setReminderCount(count);
     setReminderHours(hours);
-    await setSetting(userId, 'notifCount', String(count));
-    await setSetting(userId, 'notifHours', JSON.stringify(hours));
+    await setSetting(userId, 'notifCount', String(count)).catch(() => {});
+    await setSetting(userId, 'notifHours', JSON.stringify(hours)).catch(() => {});
   }
 
   async function changeHour(slot: number, hour: number) {
     const hours = reminderHours.map((h, i) => (i === slot ? hour : h));
     setReminderHours(hours);
     setPickerSlot(null);
-    await setSetting(userId, 'notifHours', JSON.stringify(hours));
+    await setSetting(userId, 'notifHours', JSON.stringify(hours)).catch(() => {});
   }
 
   async function handleExport() {
