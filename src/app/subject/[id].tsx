@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
 import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { createCard, deleteSubject, getSubject, listCardsBySubject, updateSubject } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
@@ -122,23 +123,22 @@ export default function SubjectDetailScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Stack.Screen
-        options={{
-          title: subject?.name ?? t('subject.title'),
-          headerRight: () => (
-            <RowMenu
-              items={[
-                { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenaming(true) },
-                {
-                  label: t('book.deleteUnit'),
-                  icon: 'trash-outline',
-                  destructive: true,
-                  onPress: handleDeleteUnit,
-                },
-              ]}
-            />
-          ),
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={subject?.name ?? t('subject.title')}
+        right={
+          <RowMenu
+            items={[
+              { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenaming(true) },
+              {
+                label: t('book.deleteUnit'),
+                icon: 'trash-outline',
+                destructive: true,
+                onPress: handleDeleteUnit,
+              },
+            ]}
+          />
+        }
       />
       <FlatList
         data={cards}

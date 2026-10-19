@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
 import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { createSubject, deleteBook, deleteSubject, getBook, listSubjects, updateBook, updateSubject } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
@@ -131,23 +132,22 @@ export default function BookDetailScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Stack.Screen
-        options={{
-          title: book?.name ?? t('book.title'),
-          headerRight: () => (
-            <RowMenu
-              items={[
-                { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenamingBook(true) },
-                {
-                  label: t('library.deleteBook'),
-                  icon: 'trash-outline',
-                  destructive: true,
-                  onPress: handleDeleteBook,
-                },
-              ]}
-            />
-          ),
-        }}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title={book?.name ?? t('book.title')}
+        right={
+          <RowMenu
+            items={[
+              { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenamingBook(true) },
+              {
+                label: t('library.deleteBook'),
+                icon: 'trash-outline',
+                destructive: true,
+                onPress: handleDeleteBook,
+              },
+            ]}
+          />
+        }
       />
       <FlatList
         data={units}
