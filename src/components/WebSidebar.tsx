@@ -39,13 +39,21 @@ export function WebSidebar() {
 
   return (
     <View style={[styles.root, { width, backgroundColor: colors.card, borderRightColor: colors.border }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top }]}>
+      <View
+        style={[
+          styles.header,
+          collapsed && styles.headerCollapsed,
+          { borderBottomColor: colors.border, paddingTop: insets.top },
+        ]}
+      >
         <Pressable onPress={() => router.push('/')} hitSlop={8} accessibilityLabel={t('tabs.home')}>
           <Image source={require('../../assets/icon.png')} style={styles.logo} />
         </Pressable>
-        <View style={styles.headerSpacer}>
-          {!collapsed && <Text style={[styles.title, { color: colors.text }]}>Yodda</Text>}
-        </View>
+        {!collapsed && (
+          <View style={styles.headerSpacer}>
+            <Text style={[styles.title, { color: colors.text }]}>Yodda</Text>
+          </View>
+        )}
         <Pressable onPress={() => setCollapsed((v) => !v)} hitSlop={8} accessibilityLabel={t('common.toggleSidebar')}>
           <Ionicons name="menu-outline" size={22} color={colors.muted} />
         </Pressable>
@@ -75,13 +83,15 @@ export function WebSidebar() {
 const styles = StyleSheet.create({
   root: { borderRightWidth: 1 },
   header: {
-    height: HEADER_HEIGHT,
+    minHeight: HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing(1),
     paddingHorizontal: spacing(1.5),
+    paddingVertical: spacing(1),
     borderBottomWidth: 1,
   },
+  headerCollapsed: { flexDirection: 'column', paddingHorizontal: 0 },
   headerSpacer: { flex: 1 },
   logo: { width: 28, height: 28, borderRadius: radius.sm },
   title: { fontSize: 17, fontWeight: '700' },
