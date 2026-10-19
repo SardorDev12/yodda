@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthGate } from '@/components/AuthGate';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
+import { VersionGate } from '@/components/VersionGate';
 import { DEFAULT_LANGUAGE, translate } from '@/i18n';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { syncAndroidChrome } from '@/lib/navigation-bar';
@@ -47,6 +48,7 @@ function Navigator() {
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <VersionGate />
       <UpdatePrompt />
       <Stack
         screenOptions={{

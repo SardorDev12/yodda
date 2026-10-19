@@ -76,3 +76,36 @@ create policy "user_settings_owner_all" on public.user_settings
 alter publication supabase_realtime add table public.books;
 alter publication supabase_realtime add table public.subjects;
 alter publication supabase_realtime add table public.cards;
+
+-- App version gate: lets the app check "is this build too old" without a
+-- store API or a new native build. One row per platform.
+--   min_version    — below this, the app blocks with a forced-update modal.
+--   latest_version — below this (but >= min_version), the app shows a
+--                    dismissible "update available" modal.
+-- Versions compare as dot-separated integers (e.g. "1.2.0"), left to right.
+create table if not exists public.app_config (
+  platform text primary key check (platform in ('ios', 'android')),
+  min_version text not null,
+  latest_version text not null,
+  update_url text,
+  message text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.app_config enable row level security;
+
+-- Readable by anyone, including signed-out clients — there's no user to
+-- scope this to, and the app needs it before/without auth too.
+drop policy if exists "app_config_public_read" on public.app_config;
+create policy "app_config_public_read" on public.app_config
+  for select using (true);
+
+-- No insert/update/delete policy is defined on purpose: RLS defaults to
+-- deny, so only editing via the Supabase SQL editor / service role (which
+-- bypasses RLS) can change these rows — never the app itself.
+
+insert into public.app_config (platform, min_version, latest_version, update_url)
+values
+  ('ios', '1.0.0', '1.0.0', 'https://apps.apple.com/app/id0000000000'),
+  ('android', '1.0.0', '1.0.0', 'https://play.google.com/store/apps/details?id=uz.yodda.app')
+on conflict (platform) do nothing;

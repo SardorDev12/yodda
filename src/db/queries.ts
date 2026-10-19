@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { scheduler } from '@/scheduler';
-import type { Book, BookWithCounts, Card, CardStatus, Rating, Subject, SubjectWithCounts } from '@/types';
+import type { AppConfig, Book, BookWithCounts, Card, CardStatus, Rating, Subject, SubjectWithCounts } from '@/types';
 
 function requireClient() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -460,4 +460,22 @@ export async function setSetting(userId: string, key: string, value: string): Pr
     .from('user_settings')
     .upsert({ user_id: userId, data: nextData, updated_at: new Date().toISOString() });
   if (error) throw error;
+}
+
+/**
+ * Unscoped by design — app_config has a public-read RLS policy (see
+ * schema.sql) since this needs to work for signed-out clients too.
+ */
+export async function getAppConfig(platform: 'ios' | 'android'): Promise<AppConfig | null> {
+  const db = requireClient();
+  const { data, error } = await db.from('app_config').select('*').eq('platform', platform).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    platform: data.platform,
+    minVersion: data.min_version,
+    latestVersion: data.latest_version,
+    updateUrl: data.update_url,
+    message: data.message,
+  };
 }

@@ -52,3 +52,11 @@ export interface BookWithCounts extends Book {
   totalCards: number;
   dueToday: number;
 }
+
+export interface AppConfig {
+  platform: 'ios' | 'android';
+  minVersion: string;
+  latestVersion: string;
+  updateUrl: string | null;
+  message: string | null;
+}
