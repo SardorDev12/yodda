@@ -104,8 +104,10 @@ create policy "app_config_public_read" on public.app_config
 -- deny, so only editing via the Supabase SQL editor / service role (which
 -- bypasses RLS) can change these rows — never the app itself.
 
+-- iOS update_url stays null until the app is live on the App Store — fill
+-- it in (and bump min_version/latest_version as needed) once it ships.
 insert into public.app_config (platform, min_version, latest_version, update_url)
 values
-  ('ios', '1.0.0', '1.0.0', 'https://apps.apple.com/app/id0000000000'),
+  ('ios', '1.0.0', '1.0.0', null),
   ('android', '1.0.0', '1.0.0', 'https://play.google.com/store/apps/details?id=uz.yodda.app')
 on conflict (platform) do nothing;
