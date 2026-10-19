@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { TranslationKey } from '@/i18n';
@@ -11,7 +11,6 @@ import { radius, spacing } from '@/theme';
 const HEADER_HEIGHT = 64;
 const WIDTH_EXPANDED = 232;
 const WIDTH_COLLAPSED = 76;
-const WIDTH_TRANSITION = 'width 200ms ease';
 
 const ITEMS: { href: '/' | '/library' | '/settings'; icon: keyof typeof Ionicons.glyphMap; labelKey: TranslationKey }[] = [
   { href: '/', icon: 'home', labelKey: 'tabs.home' },
@@ -39,12 +38,7 @@ export function WebSidebar() {
   const width = collapsed ? WIDTH_COLLAPSED : WIDTH_EXPANDED;
 
   return (
-    <View
-      style={[
-        styles.root,
-        { width, backgroundColor: colors.card, borderRightColor: colors.border, transition: WIDTH_TRANSITION } as ViewStyle,
-      ]}
-    >
+    <View style={[styles.root, { width, backgroundColor: colors.card, borderRightColor: colors.border }]}>
       <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top }]}>
         <Pressable onPress={() => router.push('/')} hitSlop={8} accessibilityLabel={t('tabs.home')}>
           <Image source={require('../../assets/icon.png')} style={styles.logo} />
