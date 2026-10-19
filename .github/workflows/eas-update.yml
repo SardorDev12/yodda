@@ -42,4 +42,4 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Publish OTA update
-        run: eas update --channel ${{ inputs.channel }} --message "${{ inputs.message }}" --non-interactive
+        run: eas update --channel ${{ inputs.channel }} --environment ${{ inputs.channel }} --message "${{ inputs.message }}" --non-interactive
