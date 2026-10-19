@@ -173,46 +173,49 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
-        <View style={styles.rowBetween}>
-          <Text style={styles.rowLabel}>{t('settings.dailyReminder')}</Text>
-          <Switch value={remindersOn} onValueChange={toggleReminders} disabled={isWeb} />
+      {!isWeb && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
+          <View style={styles.rowBetween}>
+            <Text style={styles.rowLabel}>{t('settings.dailyReminder')}</Text>
+            <Switch value={remindersOn} onValueChange={toggleReminders} />
+          </View>
+
+          {remindersOn && (
+            <>
+              <Text style={styles.subLabel}>{t('settings.reminderCount')}</Text>
+              <View style={styles.countRow}>
+                {[1, 2, 3].map((count) => (
+                  <Pressable
+                    key={count}
+                    style={[styles.countChip, reminderCount === count && styles.countChipActive]}
+                    onPress={() => changeCount(count)}
+                  >
+                    <Text style={[styles.countChipText, reminderCount === count && styles.countChipTextActive]}>
+                      {count}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.subLabel}>{t('settings.reminderHours')}</Text>
+              <View style={styles.hourRow}>
+                {reminderHours.map((hour, slot) => (
+                  <Pressable key={slot} style={styles.hourChip} onPress={() => setPickerSlot(slot)}>
+                    <Text style={styles.hourChipText}>{formatHour(hour)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          )}
         </View>
-        {isWeb && <Text style={styles.hint}>{t('settings.webHint')}</Text>}
+      )}
 
-        {!isWeb && remindersOn && (
-          <>
-            <Text style={styles.subLabel}>{t('settings.reminderCount')}</Text>
-            <View style={styles.countRow}>
-              {[1, 2, 3].map((count) => (
-                <Pressable
-                  key={count}
-                  style={[styles.countChip, reminderCount === count && styles.countChipActive]}
-                  onPress={() => changeCount(count)}
-                >
-                  <Text style={[styles.countChipText, reminderCount === count && styles.countChipTextActive]}>{count}</Text>
-                </Pressable>
-              ))}
-            </View>
+      {!isWeb && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.data')}</Text>
+          <Text style={styles.hint}>{t('settings.dataTextSync')}</Text>
 
-            <Text style={styles.subLabel}>{t('settings.reminderHours')}</Text>
-            <View style={styles.hourRow}>
-              {reminderHours.map((hour, slot) => (
-                <Pressable key={slot} style={styles.hourChip} onPress={() => setPickerSlot(slot)}>
-                  <Text style={styles.hourChipText}>{formatHour(hour)}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.data')}</Text>
-        <Text style={styles.hint}>{t('settings.dataTextSync')}</Text>
-
-        {!isWeb && (
           <View style={styles.backupRow}>
             <Pressable style={styles.backupButton} onPress={handleExport} disabled={exporting}>
               <Text style={styles.backupButtonText}>{exporting ? t('settings.exporting') : t('settings.exportButton')}</Text>
@@ -221,8 +224,8 @@ export default function SettingsScreen() {
               <Text style={styles.backupButtonText}>{importing ? t('settings.importing') : t('settings.importButton')}</Text>
             </Pressable>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
