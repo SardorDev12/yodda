@@ -1,27 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import { Image, Platform, Text, useWindowDimensions, View } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Image, Platform, Pressable, Text, View, type ViewStyle } from 'react-native';
 
 import { EdgeSwipeZones } from '@/components/EdgeSwipeZones';
 import { useSettings } from '@/store/settings-context';
 import { radius, spacing } from '@/theme';
 
-const SIDEBAR_BREAKPOINT = 720;
 const SIDEBAR_HEADER_HEIGHT = 64;
+const SIDEBAR_WIDTH_EXPANDED = 232;
+const SIDEBAR_WIDTH_COLLAPSED = 76;
+const SIDEBAR_TRANSITION = 'width 200ms ease';
 
 export default function TabsLayout() {
   const { colors, t } = useSettings();
-  const { width } = useWindowDimensions();
-  const isSidebar = Platform.OS === 'web' && width >= SIDEBAR_BREAKPOINT;
+  const router = useRouter();
+  const isSidebar = Platform.OS === 'web';
+  const [collapsed, setCollapsed] = useState(false);
   const activeColor = isSidebar ? colors.bg : colors.primary;
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
   return (
     <View style={{ flex: 1 }}>
       <Tabs
-        // React Navigation snapshots screenOptions into per-route descriptors
-        // at mount; the sidebar/bottom switch needs a hard remount (not just
-        // a re-render) for colors to pick up the new isSidebar value.
-        key={isSidebar ? 'sidebar' : 'bottom'}
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
           headerShadowVisible: false,
@@ -32,19 +33,29 @@ export default function TabsLayout() {
           tabBarActiveTintColor: activeColor,
           tabBarActiveBackgroundColor: isSidebar ? colors.primary : undefined,
           tabBarInactiveTintColor: colors.muted,
-          tabBarLabel: ({ focused, children }) => (
-            <Text style={{ color: focused ? activeColor : colors.muted, fontSize: 13, fontWeight: '600' }}>
-              {children}
-            </Text>
-          ),
+          tabBarLabel: collapsed
+            ? () => null
+            : ({ focused, children }) => (
+                <Text style={{ color: focused ? activeColor : colors.muted, fontSize: 13, fontWeight: '600' }}>
+                  {children}
+                </Text>
+              ),
+          tabBarItemStyle: isSidebar
+            ? { justifyContent: collapsed ? 'center' : 'flex-start', paddingHorizontal: spacing(1.5) }
+            : undefined,
           tabBarPosition: isSidebar ? 'left' : 'bottom',
           tabBarStyle: isSidebar
-            ? {
+            ? ({
                 backgroundColor: colors.card,
                 borderRightWidth: 1,
                 borderRightColor: colors.border,
                 paddingTop: SIDEBAR_HEADER_HEIGHT,
-              }
+                width: sidebarWidth,
+                // Web-only property — react-native-web passes it straight
+                // through to the underlying DOM style; harmless no-op type
+                // mismatch is why this object is cast below.
+                transition: SIDEBAR_TRANSITION,
+              } as ViewStyle)
             : { backgroundColor: colors.card, borderTopColor: colors.border },
           // Renders behind the tab items, absolutely filling the tab bar;
           // the matching paddingTop above reserves room for it so it reads
@@ -57,16 +68,27 @@ export default function TabsLayout() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: spacing(1),
-                    paddingHorizontal: spacing(2),
+                    paddingHorizontal: spacing(1.5),
                     borderBottomWidth: 1,
                     borderBottomColor: colors.border,
                   }}
                 >
-                  <Image
-                    source={require('../../../assets/icon.png')}
-                    style={{ width: 28, height: 28, borderRadius: radius.sm }}
-                  />
-                  <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Yodda</Text>
+                  <Pressable
+                    onPress={() => router.push('/')}
+                    hitSlop={8}
+                    accessibilityLabel={t('tabs.home')}
+                  >
+                    <Image
+                      source={require('../../../assets/icon.png')}
+                      style={{ width: 28, height: 28, borderRadius: radius.sm }}
+                    />
+                  </Pressable>
+                  <View style={{ flex: 1 }}>
+                    {!collapsed && <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Yodda</Text>}
+                  </View>
+                  <Pressable onPress={() => setCollapsed((v) => !v)} hitSlop={8}>
+                    <Ionicons name="menu-outline" size={22} color={colors.muted} />
+                  </Pressable>
                 </View>
               )
             : undefined,
