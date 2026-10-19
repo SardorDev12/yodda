@@ -63,12 +63,7 @@ export function WebSidebar() {
           return (
             <Link key={item.href} href={item.href} asChild>
               <Pressable
-                style={({ pressed }) => [
-                  styles.item,
-                  collapsed && styles.itemCollapsed,
-                  active && { backgroundColor: colors.primary },
-                  pressed && !active && { backgroundColor: colors.bg },
-                ]}
+                style={[styles.item, collapsed && styles.itemCollapsed, active && { backgroundColor: colors.primary }]}
               >
                 <Ionicons name={item.icon} size={20} color={active ? colors.bg : colors.muted} />
                 {!collapsed && (
