@@ -81,6 +81,16 @@ export async function createBook(userId: string, name: string): Promise<Book> {
   return { id, name: name.trim(), createdAt: now, updatedAt: now };
 }
 
+export async function updateBook(userId: string, bookId: string, name: string): Promise<void> {
+  const db = requireClient();
+  const { error } = await db
+    .from('books')
+    .update({ name: name.trim(), updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('id', bookId);
+  if (error) throw error;
+}
+
 export async function getBook(userId: string, bookId: string): Promise<Book | null> {
   const db = requireClient();
   const { data, error } = await db.from('books').select('*').eq('user_id', userId).eq('id', bookId).maybeSingle();
@@ -150,6 +160,16 @@ export async function createSubject(userId: string, bookId: string, name: string
     .insert({ id, user_id: userId, book_id: bookId, name: name.trim(), created_at: now, updated_at: now });
   if (error) throw error;
   return { id, bookId, name: name.trim(), createdAt: now, updatedAt: now };
+}
+
+export async function updateSubject(userId: string, subjectId: string, name: string): Promise<void> {
+  const db = requireClient();
+  const { error } = await db
+    .from('subjects')
+    .update({ name: name.trim(), updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('id', subjectId);
+  if (error) throw error;
 }
 
 export async function deleteSubject(userId: string, subjectId: string): Promise<void> {

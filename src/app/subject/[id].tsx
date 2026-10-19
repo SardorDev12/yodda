@@ -15,8 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
+import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
-import { createCard, deleteSubject, getSubject, listCardsBySubject } from '@/db/queries';
+import { createCard, deleteSubject, getSubject, listCardsBySubject, updateSubject } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
@@ -45,6 +46,7 @@ export default function SubjectDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   const loadCards = useCallback(() => {
     if (id) return listCardsBySubject(userId, id).then(setCards);
@@ -88,7 +90,7 @@ export default function SubjectDetailScreen() {
   function handleDeleteUnit() {
     if (!id) return;
     Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
-      { text: t('edit.cancel'), style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('book.deleteUnit'),
         style: 'destructive',
@@ -104,6 +106,17 @@ export default function SubjectDetailScreen() {
     ]);
   }
 
+  async function handleRename(name: string) {
+    if (!id) return;
+    try {
+      await updateSubject(userId, id, name);
+      setRenaming(false);
+      load();
+    } catch {
+      Alert.alert(t('book.renameUnit'), t('common.loadError'));
+    }
+  }
+
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={t('common.loadError')} onRetry={load} />;
 
@@ -113,7 +126,17 @@ export default function SubjectDetailScreen() {
         options={{
           title: subject?.name ?? t('subject.title'),
           headerRight: () => (
-            <RowMenu items={[{ label: t('book.deleteUnit'), destructive: true, onPress: handleDeleteUnit }]} />
+            <RowMenu
+              items={[
+                { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenaming(true) },
+                {
+                  label: t('book.deleteUnit'),
+                  icon: 'trash-outline',
+                  destructive: true,
+                  onPress: handleDeleteUnit,
+                },
+              ]}
+            />
           ),
         }}
       />
@@ -157,7 +180,7 @@ export default function SubjectDetailScreen() {
                     style={({ pressed }) => [styles.newCardCancel, pressed && styles.pressedDim]}
                     onPress={() => setAddingCard(false)}
                   >
-                    <Text style={styles.newCardCancelText}>{t('edit.cancel')}</Text>
+                    <Text style={styles.newCardCancelText}>{t('common.cancel')}</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.newCardSave, (!question.trim() || !answer.trim()) && styles.newCardSaveDisabled]}
@@ -191,6 +214,14 @@ export default function SubjectDetailScreen() {
             <Text style={styles.status}>{STATUS_LABEL[item.status]}</Text>
           </Pressable>
         )}
+      />
+      <RenameModal
+        visible={renaming}
+        title={t('book.renameUnit')}
+        initialValue={subject?.name ?? ''}
+        placeholder={t('book.unitNamePlaceholder')}
+        onCancel={() => setRenaming(false)}
+        onSave={handleRename}
       />
     </KeyboardAvoidingView>
   );

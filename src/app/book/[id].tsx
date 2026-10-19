@@ -5,8 +5,9 @@ import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
+import { RenameModal } from '@/components/RenameModal';
 import { RowMenu } from '@/components/RowMenu';
-import { createSubject, deleteBook, getBook, listSubjects } from '@/db/queries';
+import { createSubject, deleteBook, deleteSubject, getBook, listSubjects, updateBook, updateSubject } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
@@ -28,6 +29,8 @@ export default function BookDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [renamingBook, setRenamingBook] = useState(false);
+  const [renamingUnit, setRenamingUnit] = useState<SubjectWithCounts | null>(null);
 
   const load = useCallback(() => {
     if (!id) return;
@@ -67,7 +70,7 @@ export default function BookDetailScreen() {
   function handleDeleteBook() {
     if (!id) return;
     Alert.alert(t('library.deleteBookConfirmTitle'), t('library.deleteBookConfirmBody'), [
-      { text: t('edit.cancel'), style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('library.deleteBook'),
         style: 'destructive',
@@ -83,6 +86,46 @@ export default function BookDetailScreen() {
     ]);
   }
 
+  async function handleRenameBook(name: string) {
+    if (!id) return;
+    try {
+      await updateBook(userId, id, name);
+      setRenamingBook(false);
+      load();
+    } catch {
+      Alert.alert(t('library.renameBook'), t('common.loadError'));
+    }
+  }
+
+  function handleDeleteUnit(unit: SubjectWithCounts) {
+    Alert.alert(t('book.deleteUnitConfirmTitle'), t('book.deleteUnitConfirmBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('book.deleteUnit'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteSubject(userId, unit.id);
+            load();
+          } catch {
+            Alert.alert(t('book.deleteUnit'), t('common.loadError'));
+          }
+        },
+      },
+    ]);
+  }
+
+  async function handleRenameUnit(name: string) {
+    if (!renamingUnit) return;
+    try {
+      await updateSubject(userId, renamingUnit.id, name);
+      setRenamingUnit(null);
+      load();
+    } catch {
+      Alert.alert(t('book.renameUnit'), t('common.loadError'));
+    }
+  }
+
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={t('common.loadError')} onRetry={load} />;
 
@@ -92,7 +135,17 @@ export default function BookDetailScreen() {
         options={{
           title: book?.name ?? t('book.title'),
           headerRight: () => (
-            <RowMenu items={[{ label: t('library.deleteBook'), destructive: true, onPress: handleDeleteBook }]} />
+            <RowMenu
+              items={[
+                { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenamingBook(true) },
+                {
+                  label: t('library.deleteBook'),
+                  icon: 'trash-outline',
+                  destructive: true,
+                  onPress: handleDeleteBook,
+                },
+              ]}
+            />
           ),
         }}
       />
@@ -159,10 +212,37 @@ export default function BookDetailScreen() {
                   <Text style={styles.badgeText}>{item.dueToday}</Text>
                 </View>
               )}
+              <RowMenu
+                items={[
+                  { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenamingUnit(item) },
+                  {
+                    label: t('book.deleteUnit'),
+                    icon: 'trash-outline',
+                    destructive: true,
+                    onPress: () => handleDeleteUnit(item),
+                  },
+                ]}
+              />
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </View>
           </Pressable>
         )}
+      />
+      <RenameModal
+        visible={renamingBook}
+        title={t('library.renameBook')}
+        initialValue={book?.name ?? ''}
+        placeholder={t('library.bookNamePlaceholder')}
+        onCancel={() => setRenamingBook(false)}
+        onSave={handleRenameBook}
+      />
+      <RenameModal
+        visible={!!renamingUnit}
+        title={t('book.renameUnit')}
+        initialValue={renamingUnit?.name ?? ''}
+        placeholder={t('book.unitNamePlaceholder')}
+        onCancel={() => setRenamingUnit(null)}
+        onSave={handleRenameUnit}
       />
     </KeyboardAvoidingView>
   );

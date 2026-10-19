@@ -5,7 +5,9 @@ import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/CenterState';
-import { createBook, listBooks } from '@/db/queries';
+import { RenameModal } from '@/components/RenameModal';
+import { RowMenu } from '@/components/RowMenu';
+import { createBook, deleteBook, listBooks, updateBook } from '@/db/queries';
 import { useUserId } from '@/store/auth-context';
 import { useDataVersion } from '@/store/data-context';
 import { useSettings } from '@/store/settings-context';
@@ -25,6 +27,7 @@ export default function LibraryScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [renamingBook, setRenamingBook] = useState<BookWithCounts | null>(null);
 
   const loadBooks = useCallback(() => {
     return listBooks(userId)
@@ -56,6 +59,35 @@ export default function LibraryScreen() {
       Alert.alert(t('library.newBook'), t('common.loadError'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  function handleDeleteBook(book: BookWithCounts) {
+    Alert.alert(t('library.deleteBookConfirmTitle'), t('library.deleteBookConfirmBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('library.deleteBook'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteBook(userId, book.id);
+            await loadBooks();
+          } catch {
+            Alert.alert(t('library.deleteBook'), t('common.loadError'));
+          }
+        },
+      },
+    ]);
+  }
+
+  async function handleRenameBook(name: string) {
+    if (!renamingBook) return;
+    try {
+      await updateBook(userId, renamingBook.id, name);
+      setRenamingBook(null);
+      await loadBooks();
+    } catch {
+      Alert.alert(t('library.renameBook'), t('common.loadError'));
     }
   }
 
@@ -117,10 +149,29 @@ export default function LibraryScreen() {
                   <Text style={styles.badgeText}>{item.dueToday}</Text>
                 </View>
               )}
+              <RowMenu
+                items={[
+                  { label: t('common.edit'), icon: 'create-outline', onPress: () => setRenamingBook(item) },
+                  {
+                    label: t('library.deleteBook'),
+                    icon: 'trash-outline',
+                    destructive: true,
+                    onPress: () => handleDeleteBook(item),
+                  },
+                ]}
+              />
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </View>
           </Pressable>
         )}
+      />
+      <RenameModal
+        visible={!!renamingBook}
+        title={t('library.renameBook')}
+        initialValue={renamingBook?.name ?? ''}
+        placeholder={t('library.bookNamePlaceholder')}
+        onCancel={() => setRenamingBook(null)}
+        onSave={handleRenameBook}
       />
     </KeyboardAvoidingView>
   );

@@ -1,23 +1,32 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSettings } from '@/store/settings-context';
-import { radius, spacing } from '@/theme';
+import { radius, shadow, spacing } from '@/theme';
 
 export interface RowMenuItem {
   label: string;
+  icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   destructive?: boolean;
 }
 
 /**
- * Small "..." menu for a list row (book/unit/card). Keeps row actions
- * like delete out of the row's main tap target, which still navigates.
+ * "..." menu for a list row or screen header (book/unit/card). A real
+ * bottom action sheet — anchored to the bottom edge, one tappable card per
+ * item plus a separate Cancel row — rather than a plain centered dialog.
  */
 export function RowMenu({ items }: { items: RowMenuItem[] }) {
-  const { colors } = useSettings();
+  const { colors, t } = useSettings();
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+
+  function handlePress(item: RowMenuItem) {
+    setOpen(false);
+    item.onPress();
+  }
 
   return (
     <>
@@ -27,22 +36,38 @@ export function RowMenu({ items }: { items: RowMenuItem[] }) {
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {items.map((item, index) => (
-              <Pressable
-                key={index}
-                style={[styles.item, index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}
-                onPress={() => {
-                  setOpen(false);
-                  item.onPress();
-                }}
-              >
-                <Text style={[styles.itemText, { color: item.destructive ? colors.danger : colors.text }]}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            ))}
-          </Pressable>
+          <View style={[styles.sheetWrap, { paddingBottom: insets.bottom + spacing(1) }]}>
+            <View style={[styles.sheet, { backgroundColor: colors.card }]}>
+              {items.map((item, index) => (
+                <Pressable
+                  key={index}
+                  style={({ pressed }) => [
+                    styles.item,
+                    index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+                    pressed && { backgroundColor: colors.bg },
+                  ]}
+                  onPress={() => handlePress(item)}
+                >
+                  <Ionicons
+                    name={item.icon}
+                    size={19}
+                    color={item.destructive ? colors.danger : colors.text}
+                    style={styles.itemIcon}
+                  />
+                  <Text style={[styles.itemText, { color: item.destructive ? colors.danger : colors.text }]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.sheet, styles.cancelSheet, { backgroundColor: colors.card }, pressed && { backgroundColor: colors.bg }]}
+              onPress={() => setOpen(false)}
+            >
+              <Text style={[styles.itemText, styles.cancelText, { color: colors.primary }]}>{t('common.cancel')}</Text>
+            </Pressable>
+          </View>
         </Pressable>
       </Modal>
     </>
@@ -50,8 +75,12 @@ export function RowMenu({ items }: { items: RowMenuItem[] }) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', padding: spacing(3) },
-  sheet: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
-  item: { paddingVertical: spacing(1.75), paddingHorizontal: spacing(2) },
-  itemText: { fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  sheetWrap: { padding: spacing(1.5), gap: spacing(1.5) },
+  sheet: { borderRadius: radius.lg, overflow: 'hidden', ...shadow.raised },
+  cancelSheet: { alignItems: 'center', paddingVertical: spacing(1.75) },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing(1.75), paddingHorizontal: spacing(2) },
+  itemIcon: { width: 24, marginRight: spacing(1.5) },
+  itemText: { fontSize: 16, fontWeight: '600' },
+  cancelText: { fontWeight: '700' },
 });
