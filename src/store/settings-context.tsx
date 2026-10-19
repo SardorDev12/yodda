@@ -45,6 +45,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (sch === 'light' || sch === 'dark') setSchemeState(sch);
         if (order === 'question' || order === 'answer') setReviewOrderState(order);
       })
+      .catch(() => {
+        // Falls back to defaults already set in state — a settings-load
+        // failure shouldn't block the rest of the app from rendering.
+      })
       .finally(() => active && setLoaded(true));
     return () => {
       active = false;

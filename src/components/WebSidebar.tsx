@@ -43,7 +43,7 @@ export function WebSidebar() {
         style={[
           styles.header,
           collapsed && styles.headerCollapsed,
-          { borderBottomColor: colors.border, paddingTop: insets.top },
+          { borderBottomColor: colors.border, paddingTop: insets.top + spacing(1) },
         ]}
       >
         <Pressable onPress={() => router.push('/')} hitSlop={8} accessibilityLabel={t('tabs.home')}>
