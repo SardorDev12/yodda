@@ -239,6 +239,31 @@ builds keep pulling OTA updates from their channel; bumping it (as you
 would for a new store release) requires a matching new build before
 updates apply again.
 
+## Cutting a new native release
+
+When a change needs a real store build (not just OTA — see above), the
+in-app update gate (`src/components/VersionGate.tsx`, backed by the
+`app_config` table in `supabase/schema.sql`) only works if you keep two
+things in sync on every release:
+
+1. Bump `version` in `app.config.js` (e.g. `1.0.1` → `1.0.2`). This also
+   bumps `runtimeVersion` (policy: `appVersion`), which is why it needs a
+   new native build — existing installs stay on their own runtime and keep
+   pulling OTA updates scoped to it.
+2. Build and submit as usual (see [Publishing](#publishing)).
+3. Update `app_config` in Supabase so **older** installs learn about the
+   new version (this does *not* affect the device you just built —
+   that one already has the newest `version`, so the gate shows it
+   nothing by design):
+   ```sql
+   update public.app_config
+   set latest_version = '1.0.2', updated_at = now()
+   where platform = 'android'; -- or 'ios', once it's live
+   ```
+   Only bump `min_version` (which *blocks* older installs until they
+   update) for a release that genuinely breaks older clients — e.g. a
+   backend/schema change those installs can't handle.
+
 ## What's intentionally not built yet
 
 Per the product plan, the MVP stays deliberately small: no AI card
