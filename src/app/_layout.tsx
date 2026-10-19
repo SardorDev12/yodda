@@ -2,12 +2,13 @@ import { Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthGate } from '@/components/AuthGate';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { VersionGate } from '@/components/VersionGate';
+import { WebSidebar } from '@/components/WebSidebar';
 import { DEFAULT_LANGUAGE, translate } from '@/i18n';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { syncAndroidChrome } from '@/lib/navigation-bar';
@@ -46,26 +47,29 @@ function Navigator() {
   }, [scheme, colors]);
 
   return (
-    <>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <VersionGate />
-      <UpdatePrompt />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.bg },
-          headerShadowVisible: false,
-          headerTintColor: colors.text,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="review" options={{ presentation: 'fullScreenModal', headerShown: false }} />
-        <Stack.Screen name="edit-card" options={{ presentation: 'modal', title: t('edit.title') }} />
-        <Stack.Screen name="about" options={{ presentation: 'modal', title: t('about.title') }} />
-        <Stack.Screen name="book/[id]" options={{ title: t('book.title') }} />
-        <Stack.Screen name="subject/[id]" options={{ title: t('subject.title') }} />
-      </Stack>
-    </>
+    <View style={{ flex: 1, flexDirection: Platform.OS === 'web' ? 'row' : 'column' }}>
+      <WebSidebar />
+      <View style={{ flex: 1 }}>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <VersionGate />
+        <UpdatePrompt />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.bg },
+            headerShadowVisible: false,
+            headerTintColor: colors.text,
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="review" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+          <Stack.Screen name="edit-card" options={{ presentation: 'modal', title: t('edit.title') }} />
+          <Stack.Screen name="about" options={{ presentation: 'modal', title: t('about.title') }} />
+          <Stack.Screen name="book/[id]" options={{ title: t('book.title') }} />
+          <Stack.Screen name="subject/[id]" options={{ title: t('subject.title') }} />
+        </Stack>
+      </View>
+    </View>
   );
 }
 

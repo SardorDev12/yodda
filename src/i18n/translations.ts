@@ -4,6 +4,7 @@ export const en = {
   'common.edit': 'Edit',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
+  'common.toggleSidebar': 'Toggle sidebar',
 
   'update.title': 'Update available',
   'update.body': 'A new version of Yodda is ready. Restart to apply it now, or it’ll apply next time you open the app.',
@@ -181,6 +182,7 @@ export const ru: Record<TranslationKey, string> = {
   'common.edit': 'Редактировать',
   'common.cancel': 'Отмена',
   'common.save': 'Сохранить',
+  'common.toggleSidebar': 'Свернуть/развернуть боковую панель',
 
   'update.title': 'Доступно обновление',
   'update.body': 'Новая версия Yodda готова. Перезапустите, чтобы применить её сейчас, или она применится при следующем открытии приложения.',
@@ -356,6 +358,7 @@ export const uz: Record<TranslationKey, string> = {
   'common.edit': 'Tahrirlash',
   'common.cancel': "Bekor qilish",
   'common.save': 'Saqlash',
+  'common.toggleSidebar': "Yon panelni ochish/yopish",
 
   'update.title': 'Yangilanish mavjud',
   'update.body': "Yodda'ning yangi versiyasi tayyor. Hozir qo'llash uchun qayta ishga tushiring, aks holda ilovani keyingi marta ochganingizda qo'llanadi.",
