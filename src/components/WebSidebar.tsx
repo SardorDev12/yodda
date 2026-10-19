@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, usePathname, useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,16 +55,16 @@ export function WebSidebar() {
         {ITEMS.map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           return (
-            <Link key={item.href} href={item.href} asChild>
-              <Pressable
-                style={[styles.item, collapsed && styles.itemCollapsed, active && { backgroundColor: colors.primary }]}
-              >
-                <Ionicons name={item.icon} size={20} color={active ? colors.bg : colors.muted} />
-                {!collapsed && (
-                  <Text style={[styles.itemText, { color: active ? colors.bg : colors.muted }]}>{t(item.labelKey)}</Text>
-                )}
-              </Pressable>
-            </Link>
+            <Pressable
+              key={item.href}
+              onPress={() => router.push(item.href)}
+              style={[styles.item, collapsed && styles.itemCollapsed, active && { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name={item.icon} size={20} color={active ? colors.bg : colors.muted} />
+              {!collapsed && (
+                <Text style={[styles.itemText, { color: active ? colors.bg : colors.muted }]}>{t(item.labelKey)}</Text>
+              )}
+            </Pressable>
           );
         })}
       </View>
