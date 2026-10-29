@@ -68,8 +68,9 @@ export default function BookScreen() {
         <EmptyState icon="layers-outline" title={t('noSubjects')} body={t('noSubjectsSub')} />
       ) : (
         <View style={{ gap: 12 }}>
-          {subjects?.map((s) => (
+          {subjects?.map((s, i) => (
             <ListRow
+              index={i}
               key={s.id}
               icon="layers"
               title={s.name}

@@ -62,7 +62,7 @@ function Shell() {
           <Stack.Screen name="book/[id]" options={{ title: t('books') }} />
           <Stack.Screen name="subject/[id]" options={{ title: t('library') }} />
           <Stack.Screen name="edit-card/[id]" options={{ title: t('editCard') }} />
-          <Stack.Screen name="review" options={{ title: t('review') }} />
+          <Stack.Screen name="review" options={{ title: t('review'), animation: 'fade_from_bottom' }} />
           <Stack.Screen name="about" options={{ title: t('about') }} />
         </Stack>
       </View>

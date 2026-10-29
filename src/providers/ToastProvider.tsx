@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FadeIn } from '@/components/motion';
 import { AppText } from '@/components/ui';
 import { useSettings } from './SettingsProvider';
 import { radius, space } from '@/theme/tokens';
@@ -12,12 +13,12 @@ const ToastContext = createContext<(message: string, kind?: Kind) => void>(() =>
 export function ToastProvider({ children }: { children: ReactNode }) {
   const { colors } = useSettings();
   const insets = useSafeAreaInsets();
-  const [toast, setToast] = useState<{ message: string; kind: Kind } | null>(null);
+  const [toast, setToast] = useState<{ id: number; message: string; kind: Kind } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const show = useCallback((message: string, kind: Kind = 'success') => {
     if (timer.current) clearTimeout(timer.current);
-    setToast({ message, kind });
+    setToast({ id: Date.now() + Math.random(), message, kind });
     timer.current = setTimeout(() => setToast(null), 2800);
   }, []);
 
@@ -27,6 +28,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {toast ? (
         <View pointerEvents="none" style={[styles.wrap, { bottom: insets.bottom + 88 }]}>
+          <FadeIn key={toast.id} distance={24} duration={260}>
           <View
             accessibilityLiveRegion="polite"
             accessibilityRole="alert"
@@ -41,6 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               {toast.message}
             </AppText>
           </View>
+          </FadeIn>
         </View>
       ) : null}
     </ToastContext.Provider>

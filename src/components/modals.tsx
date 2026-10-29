@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSettings } from '@/providers/SettingsProvider';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
+import { PopIn } from './motion';
 import { AppText, Button, IconButton, TextField, type IconName, type TextInputRef } from './ui';
 
 /*
@@ -30,13 +31,15 @@ function Dialog({
           accessibilityRole="button"
         >
           {/* Inner pressable swallows taps so only the backdrop dismisses. */}
-          <Pressable
-            accessible={false}
-            style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => undefined}
-          >
-            {children}
-          </Pressable>
+          <PopIn style={styles.popWrap}>
+            <Pressable
+              accessible={false}
+              style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => undefined}
+            >
+              {children}
+            </Pressable>
+          </PopIn>
         </Pressable>
       </KeyboardAvoidingView>
     </Modal>
@@ -192,9 +195,9 @@ export function RowMenu({ items, label }: { items: MenuItem[]; label?: string })
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.lg },
+  popWrap: { width: '100%', maxWidth: 420 },
   dialog: {
     width: '100%',
-    maxWidth: 420,
     borderRadius: radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     padding: space.xl,

@@ -118,8 +118,9 @@ export default function SubjectScreen() {
       ) : (
         <View style={{ gap: 12 }}>
           <SectionTitle>{plural('cards', cards?.length ?? 0)}</SectionTitle>
-          {cards?.map((c) => (
+          {cards?.map((c, i) => (
             <ListRow
+              index={i}
               key={c.id}
               title={c.question}
               titleLines={2}

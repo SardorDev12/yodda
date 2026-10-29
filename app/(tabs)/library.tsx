@@ -55,8 +55,9 @@ export default function LibraryScreen() {
         <EmptyState icon="library-outline" title={t('noBooks')} body={t('noBooksSub')} />
       ) : (
         <View style={{ gap: 12 }}>
-          {books?.map((b) => (
+          {books?.map((b, i) => (
             <ListRow
+              index={i}
               key={b.id}
               icon="book"
               title={b.name}

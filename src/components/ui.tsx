@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps, ComponentRef, ReactNode, Ref } from 'react';
+import { useEffect, useRef, type ComponentProps, type ComponentRef, type ReactNode, type Ref } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +17,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettings } from '@/providers/SettingsProvider';
+import { usePressScale } from './motion';
 import { CONTENT_MAX_WIDTH, MIN_TOUCH, radius, space, type as typo } from '@/theme/tokens';
 
 export type TextInputRef = ComponentRef<typeof TextInput>;
@@ -121,6 +124,7 @@ export function Button({
 }) {
   const { colors } = useSettings();
   const off = disabled || loading;
+  const press = usePressScale();
   const bg = {
     primary: colors.primary,
     secondary: colors.surfaceAlt,
@@ -134,17 +138,18 @@ export function Button({
     ghost: colors.primary,
   }[variant];
   return (
+    <Animated.View style={[press.style, style]}>
     <Pressable
       onPress={onPress}
       disabled={off}
+      {...press.handlers}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
         styles.button,
-        { backgroundColor: bg, opacity: off ? 0.45 : pressed ? 0.85 : hovered ? 0.92 : 1 },
-        style,
+        { backgroundColor: bg, opacity: off ? 0.45 : pressed ? 0.9 : hovered ? 0.94 : 1 },
       ]}
     >
       {loading ? (
@@ -158,6 +163,7 @@ export function Button({
         </>
       )}
     </Pressable>
+    </Animated.View>
   );
 }
 
@@ -378,12 +384,21 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
 
 export function ProgressBar({ value }: { value: number }) {
   const { colors } = useSettings();
+  const v = useRef(new Animated.Value(value)).current;
+  useEffect(() => {
+    // Width can't use the native driver.
+    Animated.timing(v, { toValue: Math.min(1, Math.max(0, value)), duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [v, value]);
   return (
-    <View style={[styles.progressTrack, { backgroundColor: colors.surfaceAlt }]}>
-      <View
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
+      style={[styles.progressTrack, { backgroundColor: colors.surfaceAlt }]}
+    >
+      <Animated.View
         style={[
           styles.progressFill,
-          { backgroundColor: colors.primary, width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%` },
+          { backgroundColor: colors.primary, width: v.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
         ]}
       />
     </View>

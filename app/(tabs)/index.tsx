@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FadeIn, useCountUp } from '@/components/motion';
 import { AppText, Button, ErrorState, Loading, Screen, Surface } from '@/components/ui';
 import { getHomeStats } from '@/data/library';
 import { useRefetch } from '@/lib/useRefetch';
@@ -13,6 +14,7 @@ export default function HomeScreen() {
   const { t, plural, colors } = useSettings();
   const { data: stats, error, loading, retry } = useRefetch(getHomeStats);
 
+  const dueShown = useCountUp(stats?.dueToday ?? 0);
   const hour = new Date().getHours();
   const greeting =
     hour < 5 ? t('goodNight') : hour < 12 ? t('goodMorning') : hour < 18 ? t('goodAfternoon') : hour < 22 ? t('goodEvening') : t('goodNight');
@@ -20,9 +22,11 @@ export default function HomeScreen() {
   return (
     <SafeAreaView edges={['top']} style={[styles.fill, { backgroundColor: colors.bg }]}>
       <Screen>
-        <AppText variant="title" accessibilityRole="header">
-          {greeting}
-        </AppText>
+        <FadeIn>
+          <AppText variant="title" accessibilityRole="header">
+            {greeting}
+          </AppText>
+        </FadeIn>
 
         {loading && !stats ? (
           <Loading />
@@ -30,6 +34,7 @@ export default function HomeScreen() {
           <ErrorState message={error} onRetry={retry} />
         ) : stats ? (
           <>
+            <FadeIn delay={80}>
             <View style={[styles.hero, { backgroundColor: colors.primary }]}>
               <AppText variant="caption" color={colors.onPrimary} style={styles.heroLabel}>
                 {t('dueToday').toUpperCase()}
@@ -39,7 +44,7 @@ export default function HomeScreen() {
                 style={styles.heroCount}
                 accessibilityLabel={plural('cardsDue', stats.dueToday)}
               >
-                {stats.dueToday}
+                {dueShown}
               </AppText>
               <AppText color={colors.onPrimary} style={styles.heroSub}>
                 {stats.dueToday > 0 ? plural('cardsDue', stats.dueToday) : t('allCaughtUpSub')}
@@ -61,7 +66,9 @@ export default function HomeScreen() {
                 </AppText>
               </Pressable>
             </View>
+            </FadeIn>
 
+            <FadeIn delay={160}>
             <Button
               label={t('reviseAnytime')}
               icon="shuffle"
@@ -69,13 +76,17 @@ export default function HomeScreen() {
               accessibilityHint={t('reviseAnytimeSub')}
               onPress={() => router.push({ pathname: '/review', params: { mode: 'revise' } })}
             />
+            </FadeIn>
 
-            <View style={styles.statsRow}>
-              <Stat label={t('tomorrow')} value={stats.dueTomorrow} icon="calendar-outline" />
-              <Stat label={t('thisWeek')} value={stats.dueThisWeek} icon="calendar-number-outline" />
-              <Stat label={t('mature')} value={stats.mature} icon="ribbon-outline" />
-            </View>
+            <FadeIn delay={240}>
+              <View style={styles.statsRow}>
+                <Stat label={t('tomorrow')} value={stats.dueTomorrow} icon="calendar-outline" />
+                <Stat label={t('thisWeek')} value={stats.dueThisWeek} icon="calendar-number-outline" />
+                <Stat label={t('mature')} value={stats.mature} icon="ribbon-outline" />
+              </View>
+            </FadeIn>
 
+            <FadeIn delay={320}>
             <Pressable
               onPress={() => router.push('/library')}
               accessibilityRole="button"
@@ -99,6 +110,7 @@ export default function HomeScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
             </Pressable>
+            </FadeIn>
           </>
         ) : null}
       </Screen>
@@ -108,11 +120,12 @@ export default function HomeScreen() {
 
 function Stat({ label, value, icon }: { label: string; value: number; icon: React.ComponentProps<typeof Ionicons>['name'] }) {
   const { colors } = useSettings();
+  const shown = useCountUp(value, 600);
   return (
     <Surface style={styles.stat}>
       <Ionicons name={icon} size={20} color={colors.primary} />
       <AppText variant="heading" accessibilityLabel={`${label}: ${value}`}>
-        {value}
+        {shown}
       </AppText>
       <AppText variant="caption" muted numberOfLines={1}>
         {label}

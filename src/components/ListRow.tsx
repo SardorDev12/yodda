@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSettings } from '@/providers/SettingsProvider';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
+import { FadeIn } from './motion';
 import { AppText, type IconName } from './ui';
 
 /** Tappable list row: icon tile, title/subtitle, optional meta and trailing actions. */
@@ -14,6 +15,7 @@ export function ListRow({
   onPress,
   trailing,
   titleLines = 1,
+  index = 0,
 }: {
   icon?: IconName;
   title: string;
@@ -22,9 +24,12 @@ export function ListRow({
   onPress: () => void;
   trailing?: ReactNode;
   titleLines?: number;
+  /** Position in the list; staggers the entrance animation. */
+  index?: number;
 }) {
   const { colors } = useSettings();
   return (
+    <FadeIn delay={Math.min(index, 10) * 45} distance={10}>
     <View style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Pressable
         onPress={onPress}
@@ -55,6 +60,7 @@ export function ListRow({
       </Pressable>
       {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
     </View>
+    </FadeIn>
   );
 }
 
