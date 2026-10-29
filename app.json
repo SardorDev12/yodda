@@ -7,7 +7,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "uz.yodda.app"
@@ -31,11 +33,23 @@
       "expo-router",
       [
         "expo-splash-screen",
-        { "image": "./assets/splash-icon.png", "imageWidth": 160, "backgroundColor": "#FFFFFF" }
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#FFFFFF"
+        }
       ],
       "expo-notifications",
       "expo-background-task",
       "expo-document-picker"
-    ]
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/163d6807-abaa-4b41-a26a-5a4aa7e6ee57"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "163d6807-abaa-4b41-a26a-5a4aa7e6ee57"
+      }
+    }
   }
 }
