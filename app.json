@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Yodda",
+    "slug": "yodda",
+    "version": "1.0.0",
+    "scheme": "yodda",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "runtimeVersion": { "policy": "appVersion" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "uz.yodda.app"
+    },
+    "android": {
+      "package": "uz.yodda.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#4F46E5",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        { "image": "./assets/splash-icon.png", "imageWidth": 160, "backgroundColor": "#FFFFFF" }
+      ],
+      "expo-notifications",
+      "expo-background-task",
+      "expo-document-picker"
+    ]
+  }
+}
