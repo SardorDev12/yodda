@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthGate } from '@/components/AuthGate';
-import { SystemNavBar } from '@/components/SystemNavBar';
 import { UpdatePrompt, VersionGate } from '@/components/VersionGate';
 import { WebSidebar } from '@/components/WebSidebar';
 import { checkReminders, syncReminderTask } from '@/lib/reminders';
@@ -47,7 +46,6 @@ function Shell() {
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       {/* Web only: renders outside the tabs navigator, so the tab bar is hidden on web. */}
       <WebSidebar />
-      <SystemNavBar />
       <View style={styles.content}>
         <UpdatePrompt />
         <Stack

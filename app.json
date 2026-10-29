@@ -2,7 +2,7 @@
   "expo": {
     "name": "Yodda",
     "slug": "yodda",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "scheme": "yodda",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -40,12 +40,6 @@
         }
       ],
       "expo-notifications",
-      [
-        "expo-navigation-bar",
-        {
-          "enforceContrast": false
-        }
-      ],
       "expo-background-task",
       "expo-document-picker"
     ],
