@@ -1,9 +1,10 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Appearance, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthGate } from '@/components/AuthGate';
+import { SystemNavBar } from '@/components/SystemNavBar';
 import { UpdatePrompt, VersionGate } from '@/components/VersionGate';
 import { WebSidebar } from '@/components/WebSidebar';
 import { checkReminders, syncReminderTask } from '@/lib/reminders';
@@ -34,12 +35,6 @@ export default function RootLayout() {
 
 function Shell() {
   const { colors, theme, t, settings, loaded } = useSettings();
-
-  // Android's system navigation-bar buttons follow the app's light/dark mode, not the device's, so
-  // they stay visible against our UI. JS-only (core RN API), so it can ship over the air.
-  useEffect(() => {
-    if (Platform.OS === 'android') Appearance.setColorScheme(theme);
-  }, [theme]);
 
   useEffect(() => {
     if (!loaded || Platform.OS === 'web') return;
@@ -72,6 +67,7 @@ function Shell() {
           <Stack.Screen name="about" options={{ title: t('about') }} />
         </Stack>
       </View>
+      <SystemNavBar />
     </View>
   );
 }
