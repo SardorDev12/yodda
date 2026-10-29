@@ -539,9 +539,17 @@ export function translate(lang: Language, key: TranslationKey, params?: Params):
   return text;
 }
 
-/** Picks `${base}_one` / `${base}_other` using Intl plural rules, falling back to "other". */
+/**
+ * "one" vs "other" without Intl.PluralRules, which Hermes (Android) does not provide.
+ * Russian's "one" is 1, 21, 31… (not 11); Uzbek and English only use 1.
+ */
+export function isSingular(lang: Language, n: number): boolean {
+  if (lang === 'ru') return n % 10 === 1 && n % 100 !== 11;
+  return n === 1;
+}
+
+/** Picks `${base}_one` / `${base}_other`, falling back to "other". */
 export function translatePlural(lang: Language, base: string, n: number, params?: Params): string {
-  const category = new Intl.PluralRules(lang === 'uz' ? 'en' : lang).select(n);
-  const oneKey = `${base}_${category === 'one' ? 'one' : 'other'}` as TranslationKey;
-  return translate(lang, oneKey, { n, ...params });
+  const key = `${base}_${isSingular(lang, n) ? 'one' : 'other'}` as TranslationKey;
+  return translate(lang, key, { n, ...params });
 }
