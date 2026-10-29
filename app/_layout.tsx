@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Appearance, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthGate } from '@/components/AuthGate';
 import { UpdatePrompt, VersionGate } from '@/components/VersionGate';
@@ -34,6 +34,12 @@ export default function RootLayout() {
 
 function Shell() {
   const { colors, theme, t, settings, loaded } = useSettings();
+
+  // Android's system navigation-bar buttons follow the app's light/dark mode, not the device's, so
+  // they stay visible against our UI. JS-only (core RN API), so it can ship over the air.
+  useEffect(() => {
+    if (Platform.OS === 'android') Appearance.setColorScheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!loaded || Platform.OS === 'web') return;
