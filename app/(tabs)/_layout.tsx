@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { useShowSidebar } from '@/lib/useLayout';
 import { useSettings } from '@/providers/SettingsProvider';
 
 export default function TabsLayout() {
   const { colors, t } = useSettings();
-  const isWeb = Platform.OS === 'web';
+  const showSidebar = useShowSidebar();
   return (
     <Tabs
       screenOptions={{
@@ -18,10 +19,12 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          // The WebSidebar replaces the bottom tab bar on web.
-          display: isWeb ? 'none' : 'flex',
+          // The WebSidebar replaces the bottom tab bar on wide web; phones keep the bottom bar.
+          display: showSidebar ? 'none' : 'flex',
+          ...(Platform.OS === 'web' ? { height: 76 } : null),
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        tabBarItemStyle: Platform.OS === 'web' ? { paddingVertical: 6 } : undefined,
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

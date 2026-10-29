@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useShowSidebar } from '@/lib/useLayout';
 import { useSettings } from '@/providers/SettingsProvider';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { AppText, type IconName } from './ui';
@@ -22,7 +23,8 @@ export function WebSidebar() {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
-  if (Platform.OS !== 'web') return null;
+  const visible = useShowSidebar();
+  if (!visible) return null;
 
   const collapsed = userCollapsed ?? width < 900;
   const isActive = (path: string) => (path === '/' ? pathname === '/' : pathname.startsWith(path));
